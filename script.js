@@ -5,9 +5,9 @@
   const CLOUDINARY = {cloudName:"dzp0rzb7", uploadPreset:"rcsprints"};
   const ADMIN_PASSWORD = "RCS26prints"; // Static-site password only; not secure authentication.
   const STORAGE = {prints:"rcsprints_prints_v2", colors:"rcsprints_colors_v2", cart:"rcsprints_cart_v2"};
-  const defaultPrints = [
-    {id:1,title:"Articulated Crystal Dragon",price:"$24.99",image:"",desc:"A flexible articulated print with smooth movement and plenty of character.",featured:true},
-    {id:2,title:"Geometric Headphone Stand",price:"$18.50",image:"",desc:"A clean desk stand designed to keep headphones close and organized.",featured:true},
+    const defaultPrints = [
+    {id:1,title:"6x1 Fidget",price:"$24.99",image:"https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_900/v1793401453/kcgqx3s2ddnttbizdy7m.jpg",desc:"958q952357857318523",featured:true},
+    {id:2,title:"Geometric Headphone Stand",price:"$18.50",image:"https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_900/v1793401463/vrstpyuraml7crrob2qs.jpg",desc:"A clean desk stand designed to keep headphones close and organized.",featured:true},
     {id:3,title:"Modular Grid Organizer",price:"$15.00",image:"",desc:"Interlocking storage bins for tools, parts, and small everyday items.",featured:true},
     {id:4,title:"Cyberpunk Desk Planter",price:"$12.99",image:"",desc:"A geometric planter with a modern look for a small desk or shelf.",featured:false},
     {id:5,title:"Hexagon Wall Light Panels",price:"$32.00",image:"",desc:"Modular hexagon panels designed for creative lighting setups.",featured:false},
