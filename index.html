@@ -125,6 +125,13 @@
         <div class="admin-dashboard hidden" id="admin-dashboard">
           <div class="admin-top"><div><p class="eyebrow">Unlocked</p><h2>Catalog controls</h2><p class="muted">Changes save to this browser automatically.</p></div><button class="button button-quiet" id="admin-logout">Lock admin</button></div>
           <div class="form-card admin-colors"><label>Available materials and colors <span class="label-help">Separate each option with a comma</span><textarea id="colors-input" rows="3"></textarea></label><button class="button button-primary" id="save-colors">Save materials</button></div>
+          <div class="form-card admin-site">
+            <h2>Site images</h2>
+            <div class="photo-upload"><img class="photo-thumb" id="site-hero-thumb" src="assets/rockwell-christian-school.jpeg" alt=""><div class="photo-upload-controls"><label>Home page photo<input type="file" accept="image/*" data-site-upload="hero"></label><button type="button" class="button button-outline" data-site-reset="hero">Use original</button></div></div>
+            <div class="form-row"><label>Photo label<input id="site-hero-label" type="text"></label><label>Photo caption<input id="site-hero-title" type="text"></label></div>
+            <div class="photo-upload"><img class="photo-thumb logo-thumb" id="site-logo-thumb" src="assets/rcs-shield.png" alt=""><div class="photo-upload-controls"><label>Logo (top of page, footer and browser tab icon)<input type="file" accept="image/*" data-site-upload="logo"></label><button type="button" class="button button-outline" data-site-reset="logo">Use original</button></div></div>
+            <button type="button" class="button button-quiet" id="export-site">Export site settings</button>
+          </div>
           <div class="admin-top"><div><h2>Print slots</h2><p class="muted">Edit titles, descriptions, prices, photos, and featured status.</p></div><span><button class="button button-quiet" id="export-catalog">Export catalog</button> <button class="button button-quiet" id="reset-catalog">Reset catalog</button></span></div>
           <textarea id="export-box" class="hidden" rows="8" readonly style="width:100%;margin-bottom:12px;font:12px monospace"></textarea>
           <div id="admin-slots" class="admin-slots"></div>

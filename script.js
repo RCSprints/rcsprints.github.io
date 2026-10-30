@@ -171,11 +171,11 @@
   $("reset-catalog").addEventListener("click",()=>{if(confirm("Reset all print slots and photos to the starter catalog in this browser?")){prints=defaultPrints.map(p=>({...p}));persistPrints();showStatus("Catalog reset","The starter catalog has been restored in this browser.");}});
   $("admin-slots").addEventListener("change",e=>{const el=e.target.closest("[data-field]");if(!el)return;const p=prints[Number(el.dataset.index)];if(!p)return;p[el.dataset.field]=el.type==="checkbox"?el.checked:el.value;persistPrints();});
   $("admin-slots").addEventListener("input",e=>{const el=e.target.closest("input[data-field],textarea[data-field]");if(!el||el.type==="checkbox")return;const p=prints[Number(el.dataset.index)];if(!p)return;p[el.dataset.field]=el.value;writeStorage(STORAGE.prints,prints);renderCatalog();});
-  function resizeImage(file){
+  function resizeImage(file,max=900){
     return new Promise((resolve,reject)=>{
       const url=URL.createObjectURL(file), img=new Image();
       img.onload=()=>{
-        const max=900, scale=Math.min(1,max/Math.max(img.width,img.height));
+        const scale=Math.min(1,max/Math.max(img.width,img.height));
         const c=document.createElement("canvas"); c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
         const ctx=c.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
         URL.revokeObjectURL(url); resolve(c.toDataURL("image/jpeg",0.82));
@@ -190,22 +190,8 @@
     const file=input.files[0];
     if(!file.type.startsWith("image/")){showStatus("Not an image","Please choose a JPG, PNG, WebP or GIF file.");input.value="";return;}
     input.disabled=true;
-    try{
-      const dataUrl=await resizeImage(file);
-      try{
-        const body=new FormData();
-        body.append("file",await (await fetch(dataUrl)).blob(),"print.jpg");
-        body.append("upload_preset",CLOUDINARY.uploadPreset);
-        const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY.cloudName}/image/upload`,{method:"POST",body});
-        const json=await res.json();
-        if(!res.ok||!json.secure_url) throw new Error((json.error&&json.error.message)||"Upload failed");
-        p.image=json.secure_url.replace("/upload/","/upload/f_auto,q_auto,w_900/");
-      }catch(err){
-        p.image=dataUrl;
-        showStatus("Saved on this device only","Cloudinary upload failed ("+err.message+"), so the photo was kept in this browser only.");
-      }
-      persistPrints();
-    }catch(err){ showStatus("Could not use that photo",err.message); input.value=""; }
+    try{ p.image=await uploadPhoto(file,900); persistPrints(); }
+    catch(err){ showStatus("Could not use that photo",err.message); input.value=""; }
     input.disabled=false;
   });
   $("admin-slots").addEventListener("click",e=>{
@@ -213,6 +199,62 @@
     const p=prints[Number(btn.dataset.clearPhoto)]; if(!p) return;
     p.image=""; persistPrints();
   });
+  async function uploadPhoto(file,width){
+    const dataUrl=await resizeImage(file,width);
+    try{
+      const body=new FormData();
+      body.append("file",await (await fetch(dataUrl)).blob(),"photo.jpg");
+      body.append("upload_preset",CLOUDINARY.uploadPreset);
+      const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY.cloudName}/image/upload`,{method:"POST",body});
+      const json=await res.json();
+      if(!res.ok||!json.secure_url) throw new Error((json.error&&json.error.message)||"Upload failed");
+      return json.secure_url.replace("/upload/",`/upload/f_auto,q_auto,w_${width}/`);
+    }catch(err){
+      showStatus("Saved on this device only","Cloudinary upload failed ("+err.message+"), so the photo was kept in this browser only.");
+      return dataUrl;
+    }
+  }
+  // ----- Site images (home photo, logo, caption) -----
+  const SITE_DEFAULTS = {hero:"", logo:"", heroLabel:"Community showcase", heroTitle:"Rockwell Christian School"};
+  const ORIGINALS = {hero:"assets/rockwell-christian-school.jpeg", logo:"assets/rcs-shield.png"};
+  const SITE_KEY="rcsprints_site_v2";
+  let site={...SITE_DEFAULTS,...readStorage(SITE_KEY,{})};
+  function applySite(){
+    const hero=site.hero||ORIGINALS.hero, logo=site.logo||ORIGINALS.logo;
+    const heroImg=document.querySelector(".hero-image img"); if(heroImg) heroImg.src=hero;
+    document.querySelectorAll(".brand-mark,.footer-brand img").forEach(i=>i.src=logo);
+    const fav=document.querySelector('link[rel="icon"]'); if(fav) fav.href=logo;
+    const cap=document.querySelector(".hero-image figcaption");
+    if(cap){ cap.querySelector("span").textContent=site.heroLabel; cap.querySelector("strong").textContent=site.heroTitle; }
+    if($("site-hero-thumb")){ $("site-hero-thumb").src=hero; $("site-logo-thumb").src=logo; $("site-hero-label").value=site.heroLabel; $("site-hero-title").value=site.heroTitle; }
+  }
+  function saveSite(){ writeStorage(SITE_KEY,site); applySite(); }
+  document.addEventListener("change",async e=>{
+    const input=e.target.closest("input[data-site-upload]"); if(!input||!input.files[0]) return;
+    const key=input.dataset.siteUpload, file=input.files[0];
+    if(!file.type.startsWith("image/")){showStatus("Not an image","Please choose a JPG, PNG, WebP or GIF file.");input.value="";return;}
+    input.disabled=true;
+    try{ site[key]=await uploadPhoto(file,key==="logo"?300:1200); saveSite(); }
+    catch(err){ showStatus("Could not use that photo",err.message); }
+    input.value=""; input.disabled=false;
+  });
+  document.addEventListener("click",e=>{
+    const btn=e.target.closest("[data-site-reset]"); if(!btn) return;
+    site[btn.dataset.siteReset]=""; saveSite();
+  });
+  document.addEventListener("input",e=>{
+    if(e.target.id==="site-hero-label"){ site.heroLabel=e.target.value; saveSite(); }
+    if(e.target.id==="site-hero-title"){ site.heroTitle=e.target.value; saveSite(); }
+  });
+  $("export-site").addEventListener("click",()=>{
+    const clean=v=>String(v||"").startsWith("data:")?"":v||"";
+    const out="  const SITE_DEFAULTS = "+JSON.stringify({hero:clean(site.hero),logo:clean(site.logo),heroLabel:site.heroLabel,heroTitle:site.heroTitle})+";";
+    const box=$("export-box"); box.value=out; box.classList.remove("hidden"); box.select();
+    try{navigator.clipboard.writeText(out).catch(()=>{});}catch{}
+    const skipped=["hero","logo"].filter(k=>String(site[k]||"").startsWith("data:")).length;
+    showStatus("Site settings copied",skipped?"Copied, but "+skipped+" image(s) were saved on this device only and left blank. Re-upload them to get a permanent link.":"Copied. In script.js on GitHub, replace the SITE_DEFAULTS line with this text and commit.");
+  });
+  applySite();
   $("export-catalog").addEventListener("click",()=>{
     const q=s=>JSON.stringify(String(s==null?"":s));
     const lines=prints.map(p=>`    {id:${p.id},title:${q(p.title)},price:${q(p.price)},image:${q(String(p.image||"").startsWith("data:")?"":p.image)},desc:${q(p.desc)},featured:${p.featured?"true":"false"}}`);
