@@ -55,7 +55,7 @@
     if(!page && !section) return;
     event.preventDefault();
     if(section) setPage("store",section); else setPage(page);
-    history.replaceState(null,"",section ? "#"+section : "#"+page);
+    const next=section ? "#"+section : "#"+page; if(location.hash!==next) history.pushState(null,"",next);
   }
   function renderColors(){
     const select=$("custom-color");
@@ -64,7 +64,7 @@
   function productCard(p, index, featured=false){
     const colorOptions=colorList().map(c=>`<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("");
     return `<article class="product-card">
-      <div class="product-image"><img loading="lazy" src="${escapeHTML(imageFor(p))}" alt="${escapeHTML(p.title)}"><span class="product-tag">${featured?"Featured":"Print slot "+p.id}</span></div>
+      <div class="product-image"><img loading="lazy" src="${escapeHTML(imageFor(p))}" alt="${escapeHTML(p.title)}"><span class="product-tag">${featured?"Featured":"Print slot "+(index+1)}</span></div>
       <div class="product-body"><div class="product-title-row"><h3>${escapeHTML(p.title)}</h3><span class="product-price">${escapeHTML(p.price)}</span></div>
       <p class="product-desc">${escapeHTML(p.desc)}</p>
       <div class="product-controls"><label class="field-label">Material / color<select data-color-for="${p.id}">${colorOptions || '<option>Standard</option>'}</select></label>
@@ -87,18 +87,18 @@
     $("calc-total").textContent="$"+total; return total;
   }
   function openCart(){
-    $("cart-drawer").classList.add("open"); $("cart-drawer").setAttribute("aria-hidden","false");
+    $("cart-drawer").classList.add("open"); $("cart-drawer").setAttribute("aria-hidden","false"); $("cart-drawer").removeAttribute("inert");
     $("cart-overlay").classList.remove("hidden"); requestAnimationFrame(()=>$("cart-overlay").classList.add("visible"));
     $("close-cart").focus();
   }
   function closeCart(){
-    $("cart-drawer").classList.remove("open"); $("cart-drawer").setAttribute("aria-hidden","true");
+    $("cart-drawer").classList.remove("open"); $("cart-drawer").setAttribute("aria-hidden","true"); $("cart-drawer").setAttribute("inert","");
     $("cart-overlay").classList.remove("visible"); setTimeout(()=>$("cart-overlay").classList.add("hidden"),250);
     $("open-cart").focus();
   }
-  function addToCart(id){
+  function addToCart(id,card){
     const p=prints.find(item=>item.id===id); if(!p) return;
-    const select=document.querySelector(`[data-color-for="${id}"]`);
+    const select=(card&&card.querySelector("[data-color-for]"))||document.querySelector(`[data-color-for="${id}"]`);
     const color=select?.value || colorList()[0] || "Standard";
     const existing=cart.find(i=>i.id===id&&i.color===color);
     if(existing) existing.qty++; else cart.push({id,title:p.title,price:p.price,color,qty:1});
@@ -153,8 +153,8 @@
   $("calc-hours").addEventListener("input",calculate); $("calc-grams").addEventListener("input",calculate);
   $("use-estimate").addEventListener("click",()=>{$("custom-notes").value=`Estimated quote: $${calculate()} (${ $("calc-hours").value||0 } hours, ${ $("calc-grams").value||0 } grams). `;setPage("store","custom-order");});
   document.addEventListener("click",e=>{
-    const buy=e.target.closest("[data-buy]"); if(buy){const p=prints.find(x=>x.id===Number(buy.dataset.buy));if(p){addToCart(p.id);$("cart-name").focus();}return;}
-    const add=e.target.closest("[data-add]");if(add){addToCart(Number(add.dataset.add));return;}
+    const buy=e.target.closest("[data-buy]"); if(buy){const p=prints.find(x=>x.id===Number(buy.dataset.buy));if(p){addToCart(p.id,buy.closest(".product-card"));$("cart-name").focus();}return;}
+    const add=e.target.closest("[data-add]");if(add){addToCart(Number(add.dataset.add),add.closest(".product-card"));return;}
     const qty=e.target.closest("[data-qty]");if(qty){changeQty(Number(qty.dataset.id),qty.dataset.color,Number(qty.dataset.qty));}
   });
   $("custom-order-form").addEventListener("submit",async e=>{
@@ -224,7 +224,7 @@
     }
   }
   // ----- Site images (home photo, logo, caption) -----
-   const SITE_DEFAULTS = {"hero":"https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_1200/v1793548761/uum04bmwfkhsij29jqtg.jpg","logo":"https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_300/v1793548769/bubbergqiodwtq2aaaey.jpg","heroLabel":"Community showcase","heroTitle":"Rockwell Christian School"};
+  const SITE_DEFAULTS = {hero:"", logo:"", heroLabel:"Community showcase", heroTitle:"Rockwell Christian School"};
   const ORIGINALS = {hero:"assets/rockwell-christian-school.jpeg", logo:"assets/rcs-shield.png"};
   const SITE_KEY="rcsprints_site_v2";
   let site={...SITE_DEFAULTS,...readStorage(SITE_KEY,{})};
@@ -283,7 +283,12 @@
   $("year").textContent=new Date().getFullYear();
   renderCatalog(); calculate();
   // Support direct links such as #store and #admin on GitHub Pages.
-  const hash=location.hash.slice(1);
-  if(["home","store","admin"].includes(hash))setPage(hash);
-  else if(["calculator","custom-order"].includes(hash))setPage("store",hash);
+  function routeFromHash(){
+    const hash=location.hash.slice(1);
+    if(["home","store","admin"].includes(hash))setPage(hash);
+    else if(["calculator","custom-order"].includes(hash))setPage("store",hash);
+    else setPage("home");
+  }
+  window.addEventListener("hashchange",routeFromHash); // back/forward buttons and typed #links
+  if(location.hash) routeFromHash();
 })();

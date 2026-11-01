@@ -133,7 +133,7 @@
             <button type="button" class="button button-quiet" id="export-site">Export site settings</button>
           </div>
           <div class="admin-top"><div><h2>Print slots</h2><p class="muted">Add or remove slots, and edit titles, descriptions, prices, photos, and featured status.</p></div><span><button class="button button-primary" id="add-slot">+ Add print slot</button> <button class="button button-quiet" id="export-catalog">Export catalog</button> <button class="button button-quiet" id="reset-catalog">Reset catalog</button></span></div>
-          <textarea id="export-box" class="hidden" rows="8" readonly style="width:100%;margin-bottom:12px;font:12px monospace"></textarea>
+          <textarea id="export-box" class="hidden" aria-label="Exported settings to copy into script.js" rows="8" readonly style="width:100%;margin-bottom:12px;font:12px monospace"></textarea>
           <div id="admin-slots" class="admin-slots"></div>
           <p class="form-note">Photos upload to Cloudinary and get a permanent link. To publish your changes for everyone, click Export catalog, replace the <code>defaultPrints</code> list in <code>script.js</code> on GitHub with the copied text, and commit. Until then, edits are visible only in this browser.</p>
         </div>
@@ -144,7 +144,7 @@
   <footer class="site-footer"><div class="wrap footer-inner"><a class="footer-brand" href="#home" data-page="home"><img src="assets/rcs-shield.png" alt=""> RCSprints</a><p>Custom 3D printing, made practical.</p><span>© <span id="year"></span> RCSprints</span></div></footer>
 
   <div class="overlay hidden" id="cart-overlay"></div>
-  <aside class="cart-drawer" id="cart-drawer" aria-label="Shopping cart" aria-hidden="true">
+  <aside class="cart-drawer" id="cart-drawer" role="dialog" aria-modal="true" aria-label="Shopping cart" aria-hidden="true" inert>
     <div class="drawer-head"><div><p class="eyebrow">Your selections</p><h2>Print cart</h2></div><button class="icon-button" id="close-cart" aria-label="Close cart">×</button></div>
     <div class="cart-items" id="cart-items"></div>
     <div class="drawer-bottom"><div class="cart-total"><span>Estimated total</span><strong id="cart-total">$0.00</strong></div><form id="checkout-form"><label>Your name<input id="cart-name" required placeholder="Your name"></label><label>Email (optional)<input id="cart-email" type="email" placeholder="you@example.com"></label><button class="button button-primary button-full" type="submit" id="checkout-button">Submit order request <span>↗</span></button><p class="form-note">No payment is collected on this site. The order is a request for follow-up.</p></form></div>
