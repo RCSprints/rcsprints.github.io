@@ -5,9 +5,9 @@
   const CLOUDINARY = {cloudName:"dzp0rzb7", uploadPreset:"rcsprints"};
   const ADMIN_PASSWORD = "RCS26prints"; // Static-site password only; not secure authentication.
   const STORAGE = {prints:"rcsprints_prints_v2", colors:"rcsprints_colors_v2", cart:"rcsprints_cart_v2"};
-    const defaultPrints = [
-    {id:1,title:"6x1 Fidget",price:"$24.99",image:"https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_900/v1793401453/kcgqx3s2ddnttbizdy7m.jpg",desc:"958q952357857318523",featured:true},
-    {id:2,title:"Geometric Headphone Stand",price:"$18.50",image:"https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_900/v1793401463/vrstpyuraml7crrob2qs.jpg",desc:"A clean desk stand designed to keep headphones close and organized.",featured:true},
+  const defaultPrints = [
+    {id:1,title:"Articulated Crystal Dragon",price:"$24.99",image:"",desc:"A flexible articulated print with smooth movement and plenty of character.",featured:true},
+    {id:2,title:"Geometric Headphone Stand",price:"$18.50",image:"",desc:"A clean desk stand designed to keep headphones close and organized.",featured:true},
     {id:3,title:"Modular Grid Organizer",price:"$15.00",image:"",desc:"Interlocking storage bins for tools, parts, and small everyday items.",featured:true},
     {id:4,title:"Cyberpunk Desk Planter",price:"$12.99",image:"",desc:"A geometric planter with a modern look for a small desk or shelf.",featured:false},
     {id:5,title:"Hexagon Wall Light Panels",price:"$32.00",image:"",desc:"Modular hexagon panels designed for creative lighting setups.",featured:false},
@@ -133,8 +133,9 @@
   function lockAdmin(){ adminUnlocked=false; $("admin-login").classList.remove("hidden"); $("admin-dashboard").classList.add("hidden"); $("admin-password").value=""; }
   function renderAdminSlots(){
     if(!adminUnlocked) return;
+    if(!prints.length){ $("admin-slots").innerHTML='<p class="muted">No print slots yet. Click “+ Add print slot” to create one.</p>'; return; }
     $("admin-slots").innerHTML=prints.map((p,i)=>`<article class="admin-slot" data-slot="${p.id}">
-      <div class="admin-slot-head"><strong>Slot #${p.id}</strong><label class="check-label"><input type="checkbox" data-field="featured" data-index="${i}" ${p.featured?"checked":""}> Featured</label></div>
+      <div class="admin-slot-head"><strong>Slot #${i+1}</strong><span class="slot-actions"><label class="check-label"><input type="checkbox" data-field="featured" data-index="${i}" ${p.featured?"checked":""}> Featured</label><button type="button" class="button button-outline slot-remove" data-remove-slot="${i}">Remove slot</button></span></div>
       <div class="form-row"><label>Title<input data-field="title" data-index="${i}" value="${escapeHTML(p.title)}"></label><label>Price<input data-field="price" data-index="${i}" value="${escapeHTML(p.price)}"></label></div>
       <label>Description<textarea rows="2" data-field="desc" data-index="${i}">${escapeHTML(p.desc)}</textarea></label>
       <div class="photo-upload"><img class="photo-thumb" src="${escapeHTML(imageFor(p))}" alt=""><div class="photo-upload-controls"><label>Upload photo from your computer<input type="file" accept="image/*" data-upload="${i}"></label><button type="button" class="button button-outline" data-clear-photo="${i}">Remove photo</button></div></div>
@@ -169,7 +170,7 @@
   $("login-form").addEventListener("submit",e=>{e.preventDefault();if($("admin-password").value===ADMIN_PASSWORD){$("login-error").classList.add("hidden");unlockAdmin();}else $("login-error").classList.remove("hidden");});
   $("admin-logout").addEventListener("click",lockAdmin); $("save-colors").addEventListener("click",saveColors);
   $("reset-catalog").addEventListener("click",()=>{if(confirm("Reset all print slots and photos to the starter catalog in this browser?")){prints=defaultPrints.map(p=>({...p}));persistPrints();showStatus("Catalog reset","The starter catalog has been restored in this browser.");}});
-  $("admin-slots").addEventListener("change",e=>{const el=e.target.closest("[data-field]");if(!el)return;const p=prints[Number(el.dataset.index)];if(!p)return;p[el.dataset.field]=el.type==="checkbox"?el.checked:el.value;persistPrints();});
+  $("admin-slots").addEventListener("change",e=>{const el=e.target.closest("[data-field]");if(!el)return;const p=prints[Number(el.dataset.index)];if(!p)return;p[el.dataset.field]=el.type==="checkbox"?el.checked:el.value;if(el.dataset.field==="image"){persistPrints();}else{writeStorage(STORAGE.prints,prints);renderCatalog();}});
   $("admin-slots").addEventListener("input",e=>{const el=e.target.closest("input[data-field],textarea[data-field]");if(!el||el.type==="checkbox")return;const p=prints[Number(el.dataset.index)];if(!p)return;p[el.dataset.field]=el.value;writeStorage(STORAGE.prints,prints);renderCatalog();});
   function resizeImage(file,max=900){
     return new Promise((resolve,reject)=>{
@@ -195,6 +196,14 @@
     input.disabled=false;
   });
   $("admin-slots").addEventListener("click",e=>{
+    const rm=e.target.closest("[data-remove-slot]");
+    if(rm){
+      const p=prints[Number(rm.dataset.removeSlot)]; if(!p) return;
+      if(!confirm(`Remove "${p.title||"this slot"}" from the store? This only affects this browser until you export the catalog.`)) return;
+      prints=prints.filter(x=>x!==p);
+      cart=cart.filter(i=>i.id!==p.id); writeStorage(STORAGE.cart,cart);
+      persistPrints(); return;
+    }
     const btn=e.target.closest("[data-clear-photo]"); if(!btn) return;
     const p=prints[Number(btn.dataset.clearPhoto)]; if(!p) return;
     p.image=""; persistPrints();
@@ -215,7 +224,7 @@
     }
   }
   // ----- Site images (home photo, logo, caption) -----
-    const SITE_DEFAULTS = {"hero":"https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_1200/v1793402070/mhj5e1wcufgrua5xt442.jpg","logo":"https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_300/v1793402088/gsyw7wcwy8csrjymncza.jpg","heroLabel":"Our School","heroTitle":"Rockwell Christian School"};
+  const SITE_DEFAULTS = {hero:"", logo:"", heroLabel:"Community showcase", heroTitle:"Rockwell Christian School"};
   const ORIGINALS = {hero:"assets/rockwell-christian-school.jpeg", logo:"assets/rcs-shield.png"};
   const SITE_KEY="rcsprints_site_v2";
   let site={...SITE_DEFAULTS,...readStorage(SITE_KEY,{})};
@@ -255,6 +264,13 @@
     showStatus("Site settings copied",skipped?"Copied, but "+skipped+" image(s) were saved on this device only and left blank. Re-upload them to get a permanent link.":"Copied. In script.js on GitHub, replace the SITE_DEFAULTS line with this text and commit.");
   });
   applySite();
+  $("add-slot").addEventListener("click",()=>{
+    const id=prints.reduce((m,p)=>Math.max(m,Number(p.id)||0),0)+1;
+    prints.push({id,title:"New print",price:"$0.00",image:"",desc:"Describe this print.",featured:false});
+    persistPrints();
+    const last=$("admin-slots").lastElementChild;
+    if(last){ last.scrollIntoView({behavior:"smooth",block:"center"}); const t=last.querySelector('[data-field="title"]'); if(t){t.focus();t.select();} }
+  });
   $("export-catalog").addEventListener("click",()=>{
     const q=s=>JSON.stringify(String(s==null?"":s));
     const lines=prints.map(p=>`    {id:${p.id},title:${q(p.title)},price:${q(p.price)},image:${q(String(p.image||"").startsWith("data:")?"":p.image)},desc:${q(p.desc)},featured:${p.featured?"true":"false"}}`);

@@ -16,3 +16,4 @@
 
 .photo-upload{display:flex;gap:14px;align-items:center}.photo-thumb{width:96px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#0a150e;flex:none}.photo-upload-controls{display:grid;gap:8px;flex:1;min-width:0}.photo-upload-controls input[type=file]{padding:8px;font-size:11px}.photo-upload-controls .button{padding:8px 10px;font-size:10px;justify-self:start}
 .admin-site{display:grid;gap:18px;margin-bottom:24px}.admin-site h2{margin:0}.logo-thumb{object-fit:contain;background:#fff}
+.slot-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.slot-remove{padding:7px 10px;font-size:10px}
