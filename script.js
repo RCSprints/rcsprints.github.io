@@ -224,7 +224,7 @@
     }
   }
   // ----- Site images (home photo, logo, caption) -----
-  const SITE_DEFAULTS = {hero:"", logo:"", heroLabel:"Community showcase", heroTitle:"Rockwell Christian School"};
+   const SITE_DEFAULTS = {"hero":"https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_1200/v1793548761/uum04bmwfkhsij29jqtg.jpg","logo":"https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_300/v1793548769/bubbergqiodwtq2aaaey.jpg","heroLabel":"Community showcase","heroTitle":"Rockwell Christian School"};
   const ORIGINALS = {hero:"assets/rockwell-christian-school.jpeg", logo:"assets/rcs-shield.png"};
   const SITE_KEY="rcsprints_site_v2";
   let site={...SITE_DEFAULTS,...readStorage(SITE_KEY,{})};
