@@ -5,11 +5,11 @@
   const CLOUDINARY = {cloudName:"dzp0rzb7", uploadPreset:"rcsprints"};
   const ADMIN_PASSWORD = "RCS26prints"; // Static-site password only; not secure authentication.
   const STORAGE = {prints:"rcsprints_prints_v2", colors:"rcsprints_colors_v2", cart:"rcsprints_cart_v2"};
-  const defaultPrints = [
-    {id:1,title:"Articulated Crystal Dragon",price:"$24.99",image:"",desc:"A flexible articulated print with smooth movement and plenty of character.",featured:true},
-    {id:2,title:"Geometric Headphone Stand",price:"$18.50",image:"",desc:"A clean desk stand designed to keep headphones close and organized.",featured:true},
-    {id:3,title:"Modular Grid Organizer",price:"$15.00",image:"",desc:"Interlocking storage bins for tools, parts, and small everyday items.",featured:true},
-    {id:4,title:"Cyberpunk Desk Planter",price:"$12.99",image:"",desc:"A geometric planter with a modern look for a small desk or shelf.",featured:false},
+   const defaultPrints = [
+    {id:1,title:"Flexible T-Rex",price:"$2.00",image:"https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_900/v1794013657/fayjth73gaomvl3lazwh.jpg",desc:"A Flexible Fidget for fantastic fun!",featured:false},
+    {id:2,title:"Repo Bot Clicker Fidget",price:"$9.00",image:"https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_900/v1794014103/lkhmgduh3k1dr6hxlcxt.jpg",desc:"This Satisfying Fidget clicker combines 2 of our favorite thing here at RCSprints: Game references and clicker fidgets!",featured:true},
+    {id:3,title:"High-detail Darth Vader bust",price:"$8.00",image:"https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_900/v1794163368/acnhoaievqpaoqlepopv.jpg",desc:"This Also combines 2 more of our favorite things at RCSprints: MOVIE references and high quality busts.",featured:true},
+    {id:4,title:"Flexible Hi-Res Ice Dragon",price:"$8.00",image:"https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_900/v1794163696/posabj3op9yxqzl6fpyv.jpg",desc:"This is on of the most satisfying fidgets you can have, a flexible, shiny, Masterpiece. Also, Just in time for the cold months, this Dragon will keep you warm with fun.",featured:true},
     {id:5,title:"Hexagon Wall Light Panels",price:"$32.00",image:"",desc:"Modular hexagon panels designed for creative lighting setups.",featured:false},
     {id:6,title:"Miniature Gaming Dice Tower",price:"$21.00",image:"",desc:"A tabletop dice tower for game nights and display shelves.",featured:false},
     {id:7,title:"Custom Phone & Tablet Dock",price:"$14.50",image:"",desc:"A compact viewing stand with room to route a charging cable.",featured:false},
