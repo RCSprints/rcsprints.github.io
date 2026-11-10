@@ -515,15 +515,40 @@
     });
     $("home-device").addEventListener("click",e=>{ const b=e.target.closest("[data-w]"); if(!b) return; $("home-preview").style.width=b.dataset.w; $("home-device").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); });
   }
-  $("export-all").addEventListener("click",()=>{
+  function buildConfig(){
     pruneHome();
     let skipped=0; const clean=v=>{ if(String(v||"").startsWith("data:")){ skipped++; return ""; } return v||""; };
     const cfg={home,site:{hero:clean(site.hero),logo:clean(site.logo)},colors,prints:prints.map(p=>({...p,image:clean(p.image)}))};
-    const out='// RCSprints published settings.\n// To update: in Admin click "Copy settings for GitHub", open this file on GitHub,\n// select everything, paste over it, and commit.\nwindow.RCS_CONFIG = '+JSON.stringify(cfg,null,2)+';\n';
+    const text='// RCSprints published settings.\n// To update: in Admin click "Copy settings for GitHub", open this file on GitHub,\n// select everything, paste over it, and commit.\nwindow.RCS_CONFIG = '+JSON.stringify(cfg,null,2)+';\n';
+    return {cfg,text,skipped};
+  }
+  $("export-all").addEventListener("click",()=>{
+    const {text:out,skipped}=buildConfig();
     const box=$("export-box"); box.value=out; box.classList.remove("hidden");
     let copied=false; try{ navigator.clipboard.writeText(out).then(()=>{},()=>{}); copied=true; }catch{}
     box.select();
     showStatus("Settings copied",(copied?"Copied. ":"Select the text in the box and copy it. ")+"Now open config.js on GitHub, click the pencil icon, select everything, paste, and commit."+(skipped?" Note: "+skipped+" photo(s) were saved on this device only and left blank. Re-upload them to get a permanent link.":""));
+  });
+  $("verify-publish").addEventListener("click",async()=>{
+    const out=$("verify-result"), e=escapeHTML, canon=o=>JSON.stringify(o,(k,v)=>v&&typeof v==="object"&&!Array.isArray(v)?Object.fromEntries(Object.entries(v).sort()):v);
+    out.innerHTML="Checking…";
+    const lines=[], bad=(m)=>lines.push('<span class="bad">⚠ '+m+'</span>'), ok=(m)=>lines.push('<span class="ok">✓ '+m+'</span>');
+    const url=new URL("config.js",location.href.split("#")[0].split("?")[0]);
+    if(location.protocol==="file:"){ out.innerHTML='<span class="bad">⚠ This check only works on the live website (https://…), not a file opened from your computer.</span>'; return; }
+    if(typeof window.RCS_CONFIG==="undefined") bad("This page did not load config.js. Make sure config.js is in the same folder as index.html on GitHub, and that index.html is the newest version.");
+    let live=null;
+    try{
+      const res=await fetch(url.href+"?check="+Date.now(),{cache:"no-store"});
+      if(!res.ok) bad("config.js was not found on your site (error "+res.status+"). It must be named exactly config.js and sit next to index.html.");
+      else{ const m=(await res.text()).match(/window\.RCS_CONFIG\s*=\s*([\s\S]*?);\s*$/); try{ live=JSON.parse(m[1]); }catch{ bad("config.js on GitHub has a typo or was only partly pasted. Re-copy the settings and paste over everything in that file."); } }
+    }catch(err){ bad("Could not reach "+e(url.href)+"."); }
+    if(live){
+      const {cfg,skipped}=buildConfig();
+      [["home","Home page design (colors, fonts, text, layout)"],["site","Home photo and logo"],["colors","Materials and colors list"],["prints","Prints, prices and photos"]].forEach(([k,l])=>{ canon(live[k])===canon(cfg[k])?ok(l+" match what you see in Admin."):bad(l+" on GitHub are different from what you see in Admin. Copy settings again and paste into config.js."); });
+      if(skipped) bad(skipped+" photo(s) exist only in this browser and cannot be published. Re-upload them (the upload must succeed so they get a Cloudinary link).");
+      if(lines.every(l=>l.includes('class="ok"'))) lines.push("Everything published matches. If a visitor still sees the old site, GitHub Pages can take a few minutes to update. Try a private window or hold Ctrl+Shift+R.");
+    }
+    out.innerHTML=lines.join("<br>");
   });
   $("year").textContent=new Date().getFullYear();
   applyHome(); calculate();
