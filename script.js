@@ -17,7 +17,7 @@
     {id:9,title:"Mechanical Gear Fidget Toy",price:"$9.99",image:"",desc:"An engaging mechanical-style fidget print with moving gear details.",featured:false},
     {id:10,title:"Architectural Bridge Model",price:"$45.00",image:"",desc:"A detailed scale model for display, learning, or architecture fans.",featured:false}
   ];
-  const defaultColors = "PLA - Matte Black, PLA - Forest Green, PLA - Silk Gold, PLA - White, PETG - Cool Grey, TPU - Flexible Orange";
+  const defaultColors = "Black, White, Peak Green, Matte Matcha Green, Matte Olive Green, Silk Shiny Green/White, Light Blue, Silk Royal Blue, Silk Shiny Sapphire, Yellow, Silk Shiny Red, Silk Shiny Orange, Matte Peach Pink, Silk Deep Purple, Silk Silver, Transparent, Oakwood, Teakwood, Cherrywood, Walnut Wood,
   const $ = id => document.getElementById(id);
   const safeParse = (raw, fallback) => { try { return raw ? JSON.parse(raw) : fallback; } catch { return fallback; } };
   const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
