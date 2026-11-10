@@ -22,14 +22,14 @@
     <nav class="nav wrap" aria-label="Main navigation">
       <a class="brand" href="#home" data-page="home" aria-label="RCSprints home">
         <img src="assets/rcs-shield.png" alt="" class="brand-mark">
-        <span>RCS<span class="brand-accent">PRINTS</span><small>MADE TO FIT YOUR IDEAS</small></span>
+        <span data-edit="brand" data-label="Logo text" data-group="Header" data-controls="text,font,size,color"><span data-part data-part-label="First half">RCS</span><span class="brand-accent" data-part data-part-label="Second half (accent color)">PRINTS</span><small data-part data-part-label="Tagline under logo">MADE TO FIT YOUR IDEAS</small></span>
       </a>
       <button class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="nav-links" aria-label="Open navigation"><span></span><span></span><span></span></button>
       <div class="nav-links" id="nav-links">
-        <a href="#home" data-page="home" class="nav-link active">Home</a>
-        <a href="#store" data-page="store" class="nav-link">Print Store</a>
-        <a href="#calculator" data-section="calculator" class="nav-link">Calculator</a>
-        <a href="#custom-order" data-section="custom-order" class="nav-link">Custom Order</a>
+        <a href="#home" data-page="home" data-edit="nav-home" data-label="Menu: Home" data-group="Header" data-controls="text,color,hide" class="nav-link active">Home</a>
+        <a href="#store" data-page="store" data-edit="nav-store" data-label="Menu: Print Store" data-group="Header" data-controls="text,color,hide" class="nav-link">Print Store</a>
+        <a href="#calculator" data-section="calculator" data-edit="nav-calc" data-label="Menu: Calculator" data-group="Header" data-controls="text,color,hide" class="nav-link">Calculator</a>
+        <a href="#custom-order" data-section="custom-order" data-edit="nav-custom" data-label="Menu: Custom Order" data-group="Header" data-controls="text,color,hide" class="nav-link">Custom Order</a>
         <a href="#admin" data-page="admin" class="nav-link admin-nav">Admin</a>
       </div>
       <button class="cart-button" id="open-cart" aria-label="Open cart">Cart <span id="cart-count">0</span></button>
@@ -38,42 +38,42 @@
 
   <main id="main">
     <section class="page active" id="page-home" data-page-panel="home">
-      <section class="hero wrap">
+      <section class="hero wrap" data-section-key="hero">
         <div class="hero-copy">
-          <p class="eyebrow"><span class="status-dot"></span> Custom 3D printing</p>
-          <h1>Your ideas.<br><span>Made tangible.</span></h1>
-          <p class="hero-intro">From useful everyday pieces to one-off ideas, RCSprints helps turn digital models into real, custom 3D prints.</p>
-          <div class="hero-actions">
-            <a class="button button-primary" href="#store" data-page="store">Explore the store <span aria-hidden="true">↗</span></a>
-            <a class="button button-quiet" href="#custom-order" data-section="custom-order">Request a custom print</a>
+          <p class="eyebrow" data-edit="hero-kicker" data-label="Small label above title" data-group="Hero (top of page)"><span class="status-dot"></span> <span data-part>Custom 3D printing</span></p>
+          <h1 data-edit="hero-title" data-label="Big title" data-group="Hero (top of page)"><span data-part data-part-label="Line 1">Your ideas.</span><br><span class="accent" data-part data-part-label="Line 2 (highlight color)">Made tangible.</span></h1>
+          <p class="hero-intro" data-edit="hero-intro" data-label="Intro paragraph" data-group="Hero (top of page)">From useful everyday pieces to one-off ideas, RCSprints helps turn digital models into real, custom 3D prints.</p>
+          <div class="hero-actions" data-edit="hero-actions" data-label="Button row (position)" data-group="Hero (top of page)" data-controls="align,hide">
+            <a class="button button-primary" href="#store" data-page="store" data-edit="hero-btn1" data-link data-label="Main button" data-group="Hero (top of page)" data-controls="text,font,size,link,hide"><span data-part>Explore the store</span> <span aria-hidden="true">↗</span></a>
+            <a class="button button-quiet" href="#custom-order" data-section="custom-order" data-edit="hero-btn2" data-link data-label="Second button" data-group="Hero (top of page)" data-controls="text,font,size,link,hide"><span data-part>Request a custom print</span></a>
           </div>
-          <div class="hero-meta"><span>01 / CUSTOM PRINTS</span><span>SMALL DETAILS. REAL RESULTS.</span></div>
+          <div class="hero-meta" data-edit="hero-meta" data-label="Small caption line" data-group="Hero (top of page)"><span data-part data-part-label="Left text">01 / CUSTOM PRINTS</span><span data-part data-part-label="Right text">SMALL DETAILS. REAL RESULTS.</span></div>
         </div>
         <figure class="hero-image">
           <img src="assets/rockwell-christian-school.jpeg" alt="Rockwell Christian School building and sign">
-          <figcaption><span>Community showcase</span><strong>Rockwell Christian School</strong></figcaption>
+          <figcaption data-edit="hero-caption" data-label="Text on the photo" data-group="Hero (top of page)"><span data-part data-part-label="Small label">Community showcase</span><strong data-part data-part-label="Caption">Rockwell Christian School</strong></figcaption>
         </figure>
-        <div class="hero-index" aria-hidden="true">RCS<span>.</span></div>
+        <div class="hero-index" aria-hidden="true" data-edit="hero-index" data-label="Corner mark (top right)" data-group="Hero (top of page)" data-controls="text,color,size,hide"><span class="hi" data-part>RCS</span><span data-part>.</span></div>
       </section>
 
-      <section class="intro-strip">
+      <section class="intro-strip" data-section-key="strip">
         <div class="wrap strip-grid">
-          <p class="eyebrow">The process</p>
-          <p><strong>Pick a print.</strong> Choose an available material and color, or send a model link for a custom quote.</p>
-          <a href="#store" data-page="store" class="text-link">See how it works <span>→</span></a>
+          <p class="eyebrow" data-edit="strip-label" data-label="Label" data-group="Process strip" data-controls="text,font,size,color,align,hide"><span data-part>The process</span></p>
+          <p data-edit="strip-text" data-label="Text" data-group="Process strip"><strong data-part data-part-label="Bold start">Pick a print.</strong> <span data-part data-part-label="Rest of sentence">Choose an available material and color, or send a model link for a custom quote.</span></p>
+          <a href="#store" data-page="store" class="text-link" data-edit="strip-link" data-link data-label="Link" data-group="Process strip" data-controls="text,font,size,color,link,hide"><span data-part>See how it works</span> <span>→</span></a>
         </div>
       </section>
 
-      <section class="section wrap">
+      <section class="section wrap" data-section-key="featured">
         <div class="section-heading">
-          <div><p class="eyebrow">Hand-picked</p><h2>Featured prints</h2></div>
-          <a class="text-link" href="#store" data-page="store">Browse all prints <span>→</span></a>
+          <div><p class="eyebrow" data-edit="feat-label" data-label="Small label" data-group="Featured prints" data-controls="text,font,size,color,align,hide"><span data-part>Hand-picked</span></p><h2 data-edit="feat-title" data-label="Heading" data-group="Featured prints"><span data-part>Featured prints</span></h2></div>
+          <a class="text-link" href="#store" data-page="store" data-edit="feat-link" data-link data-label="Link" data-group="Featured prints" data-controls="text,font,size,color,link,hide"><span data-part>Browse all prints</span> <span>→</span></a>
         </div>
         <div class="product-grid" id="featured-grid"></div>
       </section>
-      <section class="cta-band wrap">
-        <div><p class="eyebrow">Have a different idea?</p><h2>Let’s make it real.</h2><p>Send a model link and your preferred material. We’ll review the details and follow up.</p></div>
-        <a class="button button-light" href="#custom-order" data-section="custom-order">Start a custom request <span>↗</span></a>
+      <section class="cta-band wrap" data-section-key="cta">
+        <div><p class="eyebrow" data-edit="cta-label" data-label="Small label" data-group="Call-to-action band" data-controls="text,font,size,color,align,hide"><span data-part>Have a different idea?</span></p><h2 data-edit="cta-title" data-label="Heading" data-group="Call-to-action band"><span data-part>Let’s make it real.</span></h2><p data-edit="cta-text" data-label="Text" data-group="Call-to-action band">Send a model link and your preferred material. We’ll review the details and follow up.</p></div>
+        <a class="button button-light" href="#custom-order" data-section="custom-order" data-edit="cta-btn" data-link data-label="Button" data-group="Call-to-action band" data-controls="text,font,size,link,hide"><span data-part>Start a custom request</span> <span>↗</span></a>
       </section>
     </section>
 
@@ -125,23 +125,38 @@
         <div class="admin-dashboard hidden" id="admin-dashboard">
           <div class="admin-top"><div><p class="eyebrow">Unlocked</p><h2>Catalog controls</h2><p class="muted">Changes save to this browser automatically.</p></div><button class="button button-quiet" id="admin-logout">Lock admin</button></div>
           <div class="form-card admin-colors"><label>Available materials and colors <span class="label-help">Separate each option with a comma</span><textarea id="colors-input" rows="3"></textarea></label><button class="button button-primary" id="save-colors">Save materials</button></div>
+          <div class="form-card publish-card">
+            <h2>Publish your changes</h2>
+            <p class="form-note">Changes you make in Admin are saved in <strong>this browser only</strong>. To show them to every visitor: (1) click the button below, (2) on GitHub open <code>config.js</code> and click the pencil icon, (3) select everything (Ctrl+A) and paste (Ctrl+V), (4) click Commit changes. This one file holds your home design, photos, prints and materials.</p>
+            <div class="he-tools"><button type="button" class="button button-primary" id="export-all">Copy settings for GitHub</button></div>
+            <textarea id="export-box" class="hidden" aria-label="Settings to copy into config.js" rows="8" readonly style="width:100%;font:12px monospace"></textarea>
+          </div>
           <div class="form-card admin-site">
             <h2>Site images</h2>
             <div class="photo-upload"><img class="photo-thumb" id="site-hero-thumb" src="assets/rockwell-christian-school.jpeg" alt=""><div class="photo-upload-controls"><label>Home page photo<input type="file" accept="image/*" data-site-upload="hero"></label><button type="button" class="button button-outline" data-site-reset="hero">Use original</button></div></div>
-            <div class="form-row"><label>Photo label<input id="site-hero-label" type="text"></label><label>Photo caption<input id="site-hero-title" type="text"></label></div>
             <div class="photo-upload"><img class="photo-thumb logo-thumb" id="site-logo-thumb" src="assets/rcs-shield.png" alt=""><div class="photo-upload-controls"><label>Logo (top of page, footer and browser tab icon)<input type="file" accept="image/*" data-site-upload="logo"></label><button type="button" class="button button-outline" data-site-reset="logo">Use original</button></div></div>
-            <button type="button" class="button button-quiet" id="export-site">Export site settings</button>
           </div>
-          <div class="admin-top"><div><h2>Print slots</h2><p class="muted">Add or remove slots, and edit titles, descriptions, prices, photos, and featured status.</p></div><span><button class="button button-primary" id="add-slot">+ Add print slot</button> <button class="button button-quiet" id="export-catalog">Export catalog</button> <button class="button button-quiet" id="reset-catalog">Reset catalog</button></span></div>
-          <textarea id="export-box" class="hidden" aria-label="Exported settings to copy into script.js" rows="8" readonly style="width:100%;margin-bottom:12px;font:12px monospace"></textarea>
+          <div class="form-card he-card" id="home-editor-card">
+            <h2>Homepage editor</h2>
+            <p class="he-note">Change colors, fonts, text, placement and sections. The preview updates as you type. Use <strong>Site images</strong> above to change the photo and logo.</p>
+            <div class="he-note" id="he-font-note" role="status" hidden></div>
+            <div class="he-grid">
+              <div class="he-controls" id="home-editor"></div>
+              <div class="he-preview">
+                <div class="he-device" id="home-device"><button type="button" class="on" data-w="100%">Desktop</button><button type="button" data-w="768px">Tablet</button><button type="button" data-w="390px">Phone</button></div>
+                <iframe id="home-preview" title="Live preview of the home page"></iframe>
+              </div>
+            </div>
+          </div>
+          <div class="admin-top"><div><h2>Print slots</h2><p class="muted">Add or remove slots, and edit titles, descriptions, prices, photos, and featured status.</p></div><span><button class="button button-primary" id="add-slot">+ Add print slot</button> <button class="button button-quiet" id="reset-catalog">Reset catalog</button></span></div>
           <div id="admin-slots" class="admin-slots"></div>
-          <p class="form-note">Photos upload to Cloudinary and get a permanent link. To publish your changes for everyone, click Export catalog, replace the <code>defaultPrints</code> list in <code>script.js</code> on GitHub with the copied text, and commit. Until then, edits are visible only in this browser.</p>
+          <p class="form-note">Photos upload to Cloudinary and get a permanent link. To publish your changes for everyone, use <strong>Publish your changes</strong> near the top of this page. Until then, edits are visible only in this browser.</p>
         </div>
       </section>
     </section>
   </main>
 
-  <footer class="site-footer"><div class="wrap footer-inner"><a class="footer-brand" href="#home" data-page="home"><img src="assets/rcs-shield.png" alt=""> RCSprints</a><p>Custom 3D printing, made practical.</p><span>© <span id="year"></span> RCSprints</span></div></footer>
+  <footer class="site-footer"><div class="wrap footer-inner"><a class="footer-brand" href="#home" data-page="home"><img src="assets/rcs-shield.png" alt=""> <span data-edit="footer-name" data-label="Business name" data-group="Footer" data-controls="text,font,size,color"><span data-part>RCSprints</span></span></a><p data-edit="footer-tagline" data-label="Footer sentence" data-group="Footer" data-controls="text,font,size,color,hide">Custom 3D printing, made practical.</p><span>© <span id="year"></span> RCSprints</span></div></footer>
 
   <div class="overlay hidden" id="cart-overlay"></div>
   <aside class="cart-drawer" id="cart-drawer" role="dialog" aria-modal="true" aria-label="Shopping cart" aria-hidden="true" inert>
@@ -151,6 +166,7 @@
   </aside>
 
   <div class="modal hidden" id="status-modal" role="dialog" aria-modal="true" aria-labelledby="status-title"><div class="modal-card"><div class="success-mark">✓</div><h2 id="status-title">Request sent</h2><p id="status-message"></p><button class="button button-primary button-full" id="close-status">Back to site</button></div></div>
+  <script src="config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
