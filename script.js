@@ -373,6 +373,94 @@
     });
     jobs.forEach(([e,px])=>{ if(px) e.style.fontSize=px.toFixed(1)+"px"; });
   }
+
+  // ----- Falling effects (snow, hearts, leaves...) -----
+  const FALL_TYPES={
+    snow:{label:"❄️ Snowflakes",chars:["❅","❆","❉","✼"],tint:true},
+    hearts:{label:"💖 Hearts (Valentine's)",chars:["💖","💗","💕","❤️"]},
+    flowers:{label:"🌸 Spring flowers",chars:["🌸","🌼","🌷"]},
+    clover:{label:"🍀 Lucky clovers",chars:["☘️","🍀"]},
+    leaves:{label:"🍂 Autumn leaves",chars:["🍂","🍁"]},
+    halloween:{label:"🎃 Halloween",chars:["🎃","🦇","👻"]},
+    christmas:{label:"🎄 Christmas",chars:["🎄","🎁","⭐","🔔"]},
+    stars:{label:"✨ Stars & sparkles",chars:["⭐","✨","🌟"]},
+    confetti:{label:"🎉 Confetti",shape:"confetti",colors:["#ff595e","#ffca3a","#8ac926","#1982c4","#6a4c93"]},
+    patriotic:{label:"🇺🇸 Red, white & blue confetti",shape:"confetti",colors:["#d62839","#ffffff","#2b59c3"]},
+    rain:{label:"🌧️ Rain",shape:"rain",tint:true},
+    bubbles:{label:"🫧 Bubbles",shape:"bubble",tint:true},
+    custom:{label:"✏️ My own emoji or characters"}
+  };
+  const FALL_DEFAULTS={amount:40,speed:4,size:22,drift:40,opacity:90,color:"#ffffff",where:"all"};
+  const fallCfg=()=>({...FALL_DEFAULTS,...(home.fall||{})});
+  let fallCanvas=null,fallRaf=0,fallParts=[],fallKey="",fallLast=0,fallT=0,fallChars=[];
+  const reduceMotion=()=>!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const segs=s=>{ try{ return [...new Intl.Segmenter(undefined,{granularity:"grapheme"}).segment(String(s||""))].map(x=>x.segment).filter(x=>x.trim()); }catch{ return Array.from(String(s||"")).filter(x=>x.trim()); } };
+  function inSeason(c,force){
+    if((!force&&ROOT.classList.contains("is-preview"))||!c.from||!c.to) return true;
+    const md=s=>{ const m=/^\d{4}-(\d{2})-(\d{2})$/.exec(s); return m?(+m[1])*100+(+m[2]):null; };
+    const f=md(c.from),t=md(c.to); if(f===null||t===null) return true;
+    const n=new Date(),cur=(n.getMonth()+1)*100+n.getDate();
+    return f<=t?(cur>=f&&cur<=t):(cur>=f||cur<=t);
+  }
+  function fallAllowed(c){
+    const pg=((document.querySelector(".page.active")||{}).dataset||{}).pagePanel;
+    if(pg==="admin"&&!IN_PREVIEW) return false;
+    return c.where==="home"?pg==="home":true;
+  }
+  function newParticle(c,W,H,initial){
+    const T=FALL_TYPES[c.type], s=c.size*(0.6+Math.random()*0.8), rain=T.shape==="rain";
+    return {x:Math.random()*W,y:initial?Math.random()*H:-s-Math.random()*H*0.25,s:rain?c.size*(0.8+Math.random()*0.8):s,
+      vy:(0.35+Math.random()*0.65)*c.speed*(rain?70:22),ph:Math.random()*6.28,sp:0.6+Math.random()*1.2,rot:Math.random()*6.28,
+      vr:(Math.random()-.5)*(T.chars&&!T.tint?0.9:1.8),
+      ch:fallChars.length?fallChars[Math.floor(Math.random()*fallChars.length)]:"",
+      col:T.colors?T.colors[Math.floor(Math.random()*T.colors.length)]:c.color};
+  }
+  function sizeFall(){
+    if(!fallCanvas) return; const dpr=Math.min(2,window.devicePixelRatio||1);
+    fallCanvas.width=Math.round(innerWidth*dpr); fallCanvas.height=Math.round(innerHeight*dpr);
+    fallCanvas.getContext("2d").setTransform(dpr,0,0,dpr,0,0);
+  }
+  function fallLoop(now){
+    fallRaf=requestAnimationFrame(fallLoop); if(!fallCanvas) return;
+    const c=fallCfg(), T=FALL_TYPES[c.type]; if(!T) return;
+    const dt=Math.min(.05,((now-fallLast)/1000)||.016); fallLast=now;
+    const allowed=fallAllowed(c); fallCanvas.style.display=allowed?"":"none"; if(!allowed) return;
+    const ctx=fallCanvas.getContext("2d"),W=innerWidth,H=innerHeight; ctx.clearRect(0,0,W,H); ctx.globalAlpha=Math.min(1,Math.max(.1,c.opacity/100)); fallT+=dt;
+    const rain=T.shape==="rain";
+    for(const p of fallParts){
+      p.y+=p.vy*dt; p.x+=(rain?c.drift*0.15:Math.sin(fallT*p.sp+p.ph)*c.drift*0.6)*dt+(rain?c.drift*0.4*dt:0); p.rot+=p.vr*dt;
+      if(p.y>H+p.s+10||p.x>W+60||p.x<-60){ Object.assign(p,newParticle(c,W,H,false)); }
+      ctx.save(); ctx.translate(p.x,p.y);
+      if(T.shape==="confetti"){ ctx.rotate(p.rot); ctx.fillStyle=p.col; ctx.scale(1,Math.cos(fallT*p.sp*2+p.ph)); ctx.fillRect(-p.s*.2,-p.s*.35,p.s*.4,p.s*.7); }
+      else if(rain){ ctx.strokeStyle=p.col; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-p.s*.12,p.s); ctx.stroke(); }
+      else if(T.shape==="bubble"){ ctx.strokeStyle=p.col; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(0,0,p.s*.45,0,6.283); ctx.stroke(); ctx.beginPath(); ctx.arc(-p.s*.15,-p.s*.15,p.s*.1,0,6.283); ctx.fillStyle=p.col; ctx.fill(); }
+      else{ ctx.rotate(T.tint?p.rot:Math.sin(p.rot)*.5); ctx.font=p.s+'px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif'; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillStyle=p.col; ctx.fillText(p.ch,0,0); }
+      ctx.restore();
+    }
+  }
+  function stopFall(){ cancelAnimationFrame(fallRaf); fallRaf=0; if(fallCanvas){ fallCanvas.remove(); fallCanvas=null; } fallParts=[]; }
+  function applyFall(){
+    const c=fallCfg(), T=FALL_TYPES[c.type];
+    const chars=!T?[]:(c.type==="custom"?segs(c.custom):(T.chars||[]));
+    const on=!!T&&(!reduceMotion()||c.ignoreReduce||IN_PREVIEW)&&inSeason(c)&&(T.shape||chars.length);
+    const key=on?JSON.stringify(c):""; if(key===fallKey) return; fallKey=key;
+    if(!on){ stopFall(); return; }
+    fallChars=chars;
+    if(!fallCanvas){ fallCanvas=document.createElement("canvas"); fallCanvas.id="fall-canvas"; fallCanvas.setAttribute("aria-hidden","true"); document.body.appendChild(fallCanvas); }
+    sizeFall();
+    const n=Math.round(Math.min(150,c.amount)*Math.min(1,innerWidth/900+.35));
+    fallParts=Array.from({length:n},()=>newParticle(c,innerWidth,innerHeight,true));
+    if(!fallRaf){ fallLast=performance.now(); fallRaf=requestAnimationFrame(fallLoop); }
+  }
+  window.addEventListener("resize",()=>{ if(fallCanvas) sizeFall(); });
+  function fallStatus(){
+    const c=fallCfg(), T=FALL_TYPES[c.type];
+    if(!T) return "Choose an effect above to turn it on.";
+    if(c.type==="custom"&&!segs(c.custom).length) return "⚠ Type at least one emoji or character.";
+    if(reduceMotion()&&!c.ignoreReduce) return "⚠ This device has “Reduce motion” turned on, so you won’t see the effect on the real site here (the preview on the right still shows it). Visitors with that setting won’t see it either. To test on this screen, turn that setting off in your system’s accessibility settings.";
+    if(!inSeason(c,true)) return "⚠ Today is outside your start and end dates, so visitors won’t see it yet. (The preview ignores dates.)";
+    return "✓ Visitors will see it now"+(c.where==="home"?" on the home page.":" on every page except Admin.");
+  }
   function applyHome(){
     const th=home.theme||{};
     THEME_VARS.forEach(([v])=>th[v]?ROOT.style.setProperty(v,th[v]):ROOT.style.removeProperty(v));
@@ -397,7 +485,7 @@
       applyAlign(el,c.align||"");
       applyLink(el,o,c.link);
     });
-    loadFonts(); applyScales(); renderCatalog();
+    loadFonts(); applyScales(); renderCatalog(); applyFall();
   }
   let rsT; window.addEventListener("resize",()=>{ clearTimeout(rsT); rsT=setTimeout(applyScales,120); });
   window.addEventListener("storage",e=>{
@@ -433,6 +521,22 @@
     b+=`<button type="button" class="he-mini" data-h="el-reset" data-k="${key}">Reset this item</button>`;
     return `<details class="he-el" data-id="el-${key}"><summary>${e(o.label)}</summary><div class="he-body">${b}</div></details>`;
   }
+  function fallEditor(){
+    const c=fallCfg(), e=escapeHTML;
+    const rng=(f,label,min,max,step,unit)=>`<label>${label}: <output>${c[f]}${unit}</output><input type="range" min="${min}" max="${max}" step="${step}" value="${c[f]}" data-h="fall" data-f="${f}"></label>`;
+    let b=`<label>Effect<select data-h="fall" data-f="type"><option value="">None</option>${Object.entries(FALL_TYPES).map(([k,v])=>`<option value="${k}"${c.type===k?" selected":""}>${v.label}</option>`).join("")}</select></label>`;
+    if(c.type){
+      if(c.type==="custom") b+=`<label>Your emoji or characters<input type="text" data-h="fall" data-f="custom" value="${e(c.custom||"")}" placeholder="for example: 🦃🍂 or ❤"></label>`;
+      b+=rng("amount","How many",5,150,5,"")+rng("speed","Fall speed",1,10,1,"")+rng("size","Size",10,60,1,"px")+rng("drift","Side-to-side drift",0,100,5,"")+rng("opacity","Strength (see-through)",20,100,5,"%");
+      if(FALL_TYPES[c.type].tint) b+=`<div class="he-row"><label>Color<input type="color" data-h="fall-color" value="${c.color}"></label><input type="text" class="hex" data-h="fall-hex" value="${c.color}" maxlength="7" spellcheck="false" aria-label="Falling effect color code"></div>`;
+      b+=`<label class="check-label"><input type="checkbox" data-h="fall" data-f="ignoreReduce"${c.ignoreReduce?" checked":""}> Show even to people whose device has “Reduce motion” on (not recommended)</label>`+
+        `<label>Where it shows<select data-h="fall" data-f="where"><option value="all"${c.where==="all"?" selected":""}>Every page of the website</option><option value="home"${c.where==="home"?" selected":""}>Home page only</option></select></label>`+
+        `<div class="he-note">Optional: turn on automatically each year (the year is ignored). Leave empty to show all the time.</div>`+
+        `<label>Start date<input type="date" data-h="fall" data-f="from" value="${e(c.from||"")}"></label><label>End date<input type="date" data-h="fall" data-f="to" value="${e(c.to||"")}"></label><button type="button" class="he-mini" data-h="fall-clear-dates">Clear dates</button>`+
+        `<div class="he-note">Dates are ignored in the preview so you can always see the effect. It never covers buttons or blocks clicks, and visitors who set their device to "reduce motion" won't see it.</div>`;
+    }
+    return `<details data-id="fall"><summary>❄️ Falling effects (seasonal)</summary><div class="he-body">${b}<div class="he-note" id="fall-status" role="status">${fallStatus()}</div><button type="button" class="he-mini" data-h="see-home">See it on the home page</button></div></details>`;
+  }
   function renderHomeEditor(){
     const box=$("home-editor"); if(!box) return;
     const open=new Set([...box.querySelectorAll("details[open]")].map(d=>d.dataset.id)), e=escapeHTML;
@@ -448,6 +552,7 @@
       `<label>Photo description (for screen readers)<input type="text" data-h="heroAlt" value="${e(home.heroAlt||ORIG_ALT)}"></label>`+
       `<label>Featured prints shown<select data-h="featuredCount">${[1,2,3,4,5,6].map(n=>`<option${(home.featuredCount||3)===n?" selected":""}>${n}</option>`).join("")}</select></label>`+
       `<div class="he-note">Sections on the home page, top to bottom:</div>`+order.map((k,i)=>`<div class="he-sec"><span>${e(SECTIONS.find(s=>s[0]===k)[1])}</span><button type="button" class="he-mini" data-h="sec-up" data-k="${k}"${i===0?" disabled":""} aria-label="Move up">↑</button><button type="button" class="he-mini" data-h="sec-down" data-k="${k}"${i===order.length-1?" disabled":""} aria-label="Move down">↓</button><label class="check-label"><input type="checkbox" data-h="sec-show" data-k="${k}"${sec.hidden&&sec.hidden[k]?"":" checked"}> Show</label></div>`).join("")+`</div></details>`;
+    h+=fallEditor();
     const groups=[]; editEls.forEach(el=>{ const o=ORIG[el.dataset.edit]; let gr=groups.find(x=>x[0]===o.group); if(!gr){gr=[o.group,[]];groups.push(gr);} gr[1].push(el.dataset.edit); });
     h+=`<details data-id="text"><summary>✏️ Text, fonts & placement</summary><div class="he-body">`+groups.map(([n,keys])=>`<p class="he-group">${e(n)}</p>`+keys.map(elCard).join("")).join("")+`</div></details>`;
     h+=`<div class="he-tools"><button type="button" class="button button-outline" data-h="revert">Undo unpublished changes</button><button type="button" class="button button-outline" data-h="reset-all">Reset to original design</button></div>`;
@@ -460,6 +565,10 @@
     const hb=$("home-editor");
     hb.addEventListener("input",e=>{
       const t=e.target,a=t.dataset.h; if(!a) return; const k=t.dataset.k;
+      if(a==="fall"){ home.fall=home.fall||{}; const f=t.dataset.f; home.fall[f]=t.type==="range"?Number(t.value):(t.type==="checkbox"?t.checked:t.value);
+        if(t.type==="range") t.previousElementSibling.textContent=t.value+({size:"px",opacity:"%"}[f]||""); saveHome(); if(f==="type") renderHomeEditor(); else { const st=$("fall-status"); if(st) st.textContent=fallStatus(); } return; }
+      if(a==="fall-color"||a==="fall-hex"){ const val=a==="fall-color"?t.value:normHex(t.value); const hx=hb.querySelector('[data-h="fall-hex"]'), pk=hb.querySelector('[data-h="fall-color"]');
+        if(!val){ t.setAttribute("aria-invalid","true"); return; } if(hx){ hx.removeAttribute("aria-invalid"); if(a==="fall-color") hx.value=val; } if(pk&&a==="fall-hex") pk.value=val; home.fall=home.fall||{}; home.fall.color=val; saveHome(); return; }
       if(a==="theme"||a==="theme-hex"){ const val=a==="theme"?t.value:normHex(t.value); const hx=hb.querySelector(`[data-h="theme-hex"][data-v="${t.dataset.v}"]`), pk=hb.querySelector(`[data-h="theme"][data-v="${t.dataset.v}"]`);
         if(!val){ t.setAttribute("aria-invalid","true"); return; } if(hx){ hx.removeAttribute("aria-invalid"); if(a==="theme") hx.value=val; } if(pk&&a==="theme-hex") pk.value=val;
         home.theme=home.theme||{}; home.theme[t.dataset.v]=val; saveHome(); contrastNote(); const b=hb.querySelector(`[data-h="theme-reset"][data-v="${t.dataset.v}"]`); if(b) b.disabled=false; return; }
@@ -491,6 +600,8 @@
       else if(a==="theme-reset"){ if(home.theme) delete home.theme[t.dataset.v]; }
       else if(a==="el-color-reset"){ delete elCfg(k).color; }
       else if(a==="el-align"){ elCfg(k,true).align=t.dataset.v; }
+      else if(a==="see-home"){ const l=document.querySelector('[data-edit="nav-home"]'); if(l) l.click(); return; }
+      else if(a==="fall-clear-dates"){ if(home.fall){ delete home.fall.from; delete home.fall.to; } }
       else if(a==="el-spacing-reset"){ delete elCfg(k).spacing; }
       else if(a==="el-reset"){ if(home.el) delete home.el[k]; }
       else if(a==="heroHeight-reset"){ home.heroHeight=""; }
@@ -505,7 +616,7 @@
     });
     hb.addEventListener("change",e=>{
       const t=e.target,a=t.dataset.h||"",k=t.dataset.k;
-      if(a.endsWith("-hex")){ const n=normHex(t.value); if(n){ t.value=n; t.removeAttribute("aria-invalid"); } else { const cur=a==="theme-hex"?((home.theme&&home.theme[t.dataset.v])||THEME_DEFAULT[t.dataset.v]):(((home.el||{})[k]||{}).color||rgbToHex(getComputedStyle(ORIG[k].el).color)); t.value=cur; t.removeAttribute("aria-invalid"); } return; }
+      if(a.endsWith("-hex")){ const n=normHex(t.value); if(n){ t.value=n; t.removeAttribute("aria-invalid"); } else { const cur=a==="fall-hex"?fallCfg().color:a==="theme-hex"?((home.theme&&home.theme[t.dataset.v])||THEME_DEFAULT[t.dataset.v]):(((home.el||{})[k]||{}).color||rgbToHex(getComputedStyle(ORIG[k].el).color)); t.value=cur; t.removeAttribute("aria-invalid"); } return; }
       if(!a.endsWith("-custom")) return;
       const raw=t.value.trim(), n=cleanFont(raw);
       if(raw&&!n){ showStatus("Font name not valid","Use only letters, numbers and spaces, exactly as it appears on fonts.google.com, like Caveat or Open Sans."); t.value=""; return; }
@@ -515,15 +626,40 @@
     });
     $("home-device").addEventListener("click",e=>{ const b=e.target.closest("[data-w]"); if(!b) return; $("home-preview").style.width=b.dataset.w; $("home-device").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); });
   }
-  $("export-all").addEventListener("click",()=>{
+  function buildConfig(){
     pruneHome();
     let skipped=0; const clean=v=>{ if(String(v||"").startsWith("data:")){ skipped++; return ""; } return v||""; };
     const cfg={home,site:{hero:clean(site.hero),logo:clean(site.logo)},colors,prints:prints.map(p=>({...p,image:clean(p.image)}))};
-    const out='// RCSprints published settings.\n// To update: in Admin click "Copy settings for GitHub", open this file on GitHub,\n// select everything, paste over it, and commit.\nwindow.RCS_CONFIG = '+JSON.stringify(cfg,null,2)+';\n';
+    const text='// RCSprints published settings.\n// To update: in Admin click "Copy settings for GitHub", open this file on GitHub,\n// select everything, paste over it, and commit.\nwindow.RCS_CONFIG = '+JSON.stringify(cfg,null,2)+';\n';
+    return {cfg,text,skipped};
+  }
+  $("export-all").addEventListener("click",()=>{
+    const {text:out,skipped}=buildConfig();
     const box=$("export-box"); box.value=out; box.classList.remove("hidden");
     let copied=false; try{ navigator.clipboard.writeText(out).then(()=>{},()=>{}); copied=true; }catch{}
     box.select();
     showStatus("Settings copied",(copied?"Copied. ":"Select the text in the box and copy it. ")+"Now open config.js on GitHub, click the pencil icon, select everything, paste, and commit."+(skipped?" Note: "+skipped+" photo(s) were saved on this device only and left blank. Re-upload them to get a permanent link.":""));
+  });
+  $("verify-publish").addEventListener("click",async()=>{
+    const out=$("verify-result"), e=escapeHTML, canon=o=>JSON.stringify(o,(k,v)=>v&&typeof v==="object"&&!Array.isArray(v)?Object.fromEntries(Object.entries(v).sort()):v);
+    out.innerHTML="Checking…";
+    const lines=[], bad=(m)=>lines.push('<span class="bad">⚠ '+m+'</span>'), ok=(m)=>lines.push('<span class="ok">✓ '+m+'</span>');
+    const url=new URL("config.js",location.href.split("#")[0].split("?")[0]);
+    if(location.protocol==="file:"){ out.innerHTML='<span class="bad">⚠ This check only works on the live website (https://…), not a file opened from your computer.</span>'; return; }
+    if(typeof window.RCS_CONFIG==="undefined") bad("This page did not load config.js. Make sure config.js is in the same folder as index.html on GitHub, and that index.html is the newest version.");
+    let live=null;
+    try{
+      const res=await fetch(url.href+"?check="+Date.now(),{cache:"no-store"});
+      if(!res.ok) bad("config.js was not found on your site (error "+res.status+"). It must be named exactly config.js and sit next to index.html.");
+      else{ const m=(await res.text()).match(/window\.RCS_CONFIG\s*=\s*([\s\S]*?);\s*$/); try{ live=JSON.parse(m[1]); }catch{ bad("config.js on GitHub has a typo or was only partly pasted. Re-copy the settings and paste over everything in that file."); } }
+    }catch(err){ bad("Could not reach "+e(url.href)+"."); }
+    if(live){
+      const {cfg,skipped}=buildConfig();
+      [["home","Home page design (colors, fonts, text, layout)"],["site","Home photo and logo"],["colors","Materials and colors list"],["prints","Prints, prices and photos"]].forEach(([k,l])=>{ canon(live[k])===canon(cfg[k])?ok(l+" match what you see in Admin."):bad(l+" on GitHub are different from what you see in Admin. Copy settings again and paste into config.js."); });
+      if(skipped) bad(skipped+" photo(s) exist only in this browser and cannot be published. Re-upload them (the upload must succeed so they get a Cloudinary link).");
+      if(lines.every(l=>l.includes('class="ok"'))) lines.push("Everything published matches. If a visitor still sees the old site, GitHub Pages can take a few minutes to update. Try a private window or hold Ctrl+Shift+R.");
+    }
+    out.innerHTML=lines.join("<br>");
   });
   $("year").textContent=new Date().getFullYear();
   applyHome(); calculate();
