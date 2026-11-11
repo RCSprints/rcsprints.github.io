@@ -1,15 +1,16 @@
-// RCSprints published settings.
+// RCSprints published settings.// RCSprints published settings.
 // To update: in Admin click "Copy settings for GitHub", open this file on GitHub,
 // select everything, paste over it, and commit.
 window.RCS_CONFIG = {
   "home": {
     "fall": {
       "type": "leaves",
-      "amount": 25,
+      "amount": 10,
       "opacity": 95,
       "where": "home",
       "from": "2026-11-11",
-      "to": "2026-11-27"
+      "to": "2026-11-27",
+      "speed": 3
     },
     "theme": {
       "--bg": "#cc5404",
