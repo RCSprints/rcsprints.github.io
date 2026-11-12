@@ -1,4 +1,4 @@
-// RCSprints published settings.// RCSprints published settings.
+// RCSprints published settings.
 // To update: in Admin click "Copy settings for GitHub", open this file on GitHub,
 // select everything, paste over it, and commit.
 window.RCS_CONFIG = {
@@ -19,6 +19,9 @@ window.RCS_CONFIG = {
       "--panel-3": "#ca4a32",
       "--green": "#94252e",
       "--cream": "#99451f"
+    },
+    "fonts": {
+      "heading": "Georgia (classic serif)"
     }
   },
   "site": {
@@ -61,50 +64,18 @@ window.RCS_CONFIG = {
     },
     {
       "id": 5,
-      "title": "Hexagon Wall Light Panels",
-      "price": "$32.00",
-      "image": "",
-      "desc": "Modular hexagon panels designed for creative lighting setups.",
+      "title": "Formula 1 sign",
+      "price": "$2.00",
+      "image": "https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_900/v1794514778/rojovrbuwmvqzmaccklo.jpg",
+      "desc": "This sign will fit in perfectly for any F1 fan!",
       "featured": false
     },
     {
       "id": 6,
-      "title": "Miniature Gaming Dice Tower",
-      "price": "$21.00",
-      "image": "",
-      "desc": "A tabletop dice tower for game nights and display shelves.",
-      "featured": false
-    },
-    {
-      "id": 7,
-      "title": "Custom Phone & Tablet Dock",
-      "price": "$14.50",
-      "image": "",
-      "desc": "A compact viewing stand with room to route a charging cable.",
-      "featured": false
-    },
-    {
-      "id": 8,
-      "title": "Lithophane Photo Lamp",
-      "price": "$39.99",
-      "image": "",
-      "desc": "A personalized keepsake that turns a favorite photo into a lamp.",
-      "featured": false
-    },
-    {
-      "id": 9,
-      "title": "Mechanical Gear Fidget Toy",
-      "price": "$9.99",
-      "image": "",
-      "desc": "An engaging mechanical-style fidget print with moving gear details.",
-      "featured": false
-    },
-    {
-      "id": 10,
-      "title": "Architectural Bridge Model",
-      "price": "$45.00",
-      "image": "",
-      "desc": "A detailed scale model for display, learning, or architecture fans.",
+      "title": "Cute knitted elephant sitting",
+      "price": "$3.00",
+      "image": "https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_900/v1794514862/nywqypd8goduonx3iiew.jpg",
+      "desc": "This cute knitted elephant looks like something your grandma would knit you as a child.",
       "featured": false
     }
   ]
