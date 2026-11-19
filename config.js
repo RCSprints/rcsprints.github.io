@@ -94,7 +94,22 @@ window.RCS_CONFIG = {
       "price": "$3.00",
       "image": "https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_900/v1795119022/m5kdcv8hcf26y1rticow.jpg",
       "desc": "This Transforming cube has more twists, angles, and combinations than the substitutions in that one recipe from the internet.",
-      "featured": false
+      "featured": true,
+      "isNew": true,
+      "added": "2026-11-19"
+    },
+    {
+      "id": 8,
+      "title": "6 piece Clicker fidget",
+      "price": "$5.00",
+      "image": "https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_900/v1795127521/xgjqfrrfyarljp6xo2x8.jpg",
+      "desc": "This Fidget is so satisfying that It'll make your fidget spinner go sit in a corner with the dust bunny gang.",
+      "featured": true,
+      "isNew": true,
+      "added": "2026-11-19",
+      "opts": [
+        1
+      ]
     }
   ]
 };
