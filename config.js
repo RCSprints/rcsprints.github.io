@@ -33,7 +33,7 @@ window.RCS_CONFIG = {
     {
       "id": 1,
       "name": "Clicker Type",
-      "choices": "Regular, Creamy, Custom (please specify in order description)"
+      "choices": "Regular, Creamy, Custom (ex. 2 creamy, 3 regular); specify in order details"
     }
   ],
   "prints": [
