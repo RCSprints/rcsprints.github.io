@@ -4,7 +4,7 @@
   const FORM_ENDPOINT = "https://formspree.io/f/xzeerwej";
   const CLOUDINARY = {cloudName:"dzp0rzb7", uploadPreset:"rcsprints"};
   const ADMIN_PASSWORD = "RCS26prints"; // Static-site password only; not secure authentication.
-  const STORAGE = {prints:"rcsprints_prints_v2", colors:"rcsprints_colors_v2", cart:"rcsprints_cart_v2"};
+  const STORAGE = {prints:"rcsprints_prints_v2", colors:"rcsprints_colors_v2", cart:"rcsprints_cart_v2", options:"rcsprints_options_v2"};
   const builtinPrints = [
     {id:1,title:"Articulated Crystal Dragon",price:"$24.99",image:"",desc:"A flexible articulated print with smooth movement and plenty of character.",featured:true},
     {id:2,title:"Geometric Headphone Stand",price:"$18.50",image:"",desc:"A clean desk stand designed to keep headphones close and organized.",featured:true},
@@ -31,12 +31,15 @@
   let cart = readStorage(STORAGE.cart, []);
   let adminUnlocked = false;
   // ----- Homepage design state (see "Homepage editor" below) -----
-  const BUILD="2026-11-19c";
+  const BUILD="2026-11-19d";
   const HOME_KEY="rcsprints_home_v1";
   const HOME_DEFAULTS = CFG.home || {};
   function deepMerge(a,b){ const o=JSON.parse(JSON.stringify(a||{})); (function m(t,s){ for(const k in s){ if(s[k]&&typeof s[k]==="object"&&!Array.isArray(s[k])){ t[k]=(t[k]&&typeof t[k]==="object")?t[k]:{}; m(t[k],s[k]); } else t[k]=s[k]; } })(o,b||{}); return o; }
   let home = deepMerge(HOME_DEFAULTS, readStorage(HOME_KEY,{}));
 
+  let optionSets = readStorage(STORAGE.options, Array.isArray(CFG.options)?CFG.options:[]);
+  if(!Array.isArray(optionSets)) optionSets=[];
+  const optChoices=s=>String((s&&s.choices)||"").split(",").map(c=>c.trim()).filter(Boolean);
   function colorList(){ return colors.split(",").map(c=>c.trim()).filter(Boolean); }
   function priceNumber(value){ return Number.parseFloat(String(value).replace(/[^0-9.]/g,"")) || 0; }
   function placeholder(title){
@@ -72,11 +75,12 @@
   }
   function productCard(p, index, mode=""){
     const colorOptions=colorList().map(c=>`<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("");
+    const optHtml=(p.opts||[]).map(id=>optionSets.find(s=>s.id===id)).filter(s=>s&&optChoices(s).length).map(s=>`<label class="field-label">${escapeHTML(s.name)}<select data-opt-for="${p.id}" data-opt-name="${escapeHTML(s.name)}">${optChoices(s).map(c=>`<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("")}</select></label>`).join("");
     return `<article class="product-card">
       <div class="product-image"><img loading="lazy" src="${escapeHTML(imageFor(p))}" alt="${escapeHTML(p.title)}"><span class="product-tag">${mode==="featured"?"Featured":(mode==="new"||isFresh(p))?"New":"Print slot "+(index+1)}</span></div>
       <div class="product-body"><div class="product-title-row"><h3>${escapeHTML(p.title)}</h3><span class="product-price">${escapeHTML(p.price)}</span></div>
       <p class="product-desc">${escapeHTML(p.desc)}</p>
-      <div class="product-controls"><label class="field-label">Material / color<select data-color-for="${p.id}">${colorOptions || '<option>Standard</option>'}</select></label>
+      <div class="product-controls">${p.hideColor?"":`<label class="field-label">Material / color<select data-color-for="${p.id}">${colorOptions || '<option>Standard</option>'}</select></label>`}${optHtml}
       <div class="product-actions"><button class="button button-primary" data-buy="${p.id}">Order print ↗</button><button class="button button-outline" data-add="${p.id}">+ Add to cart</button></div></div></div></article>`;
   }
   function isFresh(p){
@@ -117,13 +121,15 @@
   function addToCart(id,card){
     const p=prints.find(item=>item.id===id); if(!p) return;
     const select=(card&&card.querySelector("[data-color-for]"))||document.querySelector(`[data-color-for="${id}"]`);
-    const color=select?.value || colorList()[0] || "Standard";
-    const existing=cart.find(i=>i.id===id&&i.color===color);
-    if(existing) existing.qty++; else cart.push({id,title:p.title,price:p.price,color,qty:1});
+    const color=p.hideColor?"":(select?.value || colorList()[0] || "Standard");
+    const scope=card||document.querySelector(`.product-card [data-opt-for="${id}"]`)?.closest(".product-card");
+    const opts=scope?[...scope.querySelectorAll(`[data-opt-for="${id}"]`)].map(s=>`${s.dataset.optName}: ${s.value}`).join(" · "):"";
+    const existing=cart.find(i=>i.id===id&&i.color===color&&(i.opts||"")===opts);
+    if(existing) existing.qty++; else cart.push({id,title:p.title,price:p.price,color,opts,qty:1});
     writeStorage(STORAGE.cart,cart); renderCart(); openCart();
   }
-  function changeQty(id,color,delta){
-    const item=cart.find(i=>i.id===id&&i.color===color); if(!item) return;
+  function changeQty(id,color,opts,delta){
+    const item=cart.find(i=>i.id===id&&i.color===color&&(i.opts||"")===opts); if(!item) return;
     item.qty+=delta; if(item.qty<=0) cart=cart.filter(i=>i!==item);
     writeStorage(STORAGE.cart,cart); renderCart();
   }
@@ -131,7 +137,7 @@
     const count=cart.reduce((n,i)=>n+Math.max(0,Number(i.qty)||0),0);
     const total=cart.reduce((n,i)=>n+priceNumber(i.price)*Math.max(0,Number(i.qty)||0),0);
     $("cart-count").textContent=count; $("cart-total").textContent="$"+total.toFixed(2);
-    $("cart-items").innerHTML=cart.length?cart.map(i=>`<div class="cart-item"><div><strong>${escapeHTML(i.title)}</strong><small>${escapeHTML(i.color)} · ${escapeHTML(i.price)} each</small></div><div class="qty-controls"><button data-qty="-1" data-id="${i.id}" data-color="${escapeHTML(i.color)}" aria-label="Remove one ${escapeHTML(i.title)}">−</button><span>${i.qty}</span><button data-qty="1" data-id="${i.id}" data-color="${escapeHTML(i.color)}" aria-label="Add one ${escapeHTML(i.title)}">+</button></div></div>`).join(""):'<p class="cart-empty">Your cart is empty.<br>Pick a print to get started.</p>';
+    $("cart-items").innerHTML=cart.length?cart.map(i=>`<div class="cart-item"><div><strong>${escapeHTML(i.title)}</strong><small>${escapeHTML([i.color,i.opts].filter(Boolean).join(" · "))}${i.color||i.opts?" · ":""}${escapeHTML(i.price)} each</small></div><div class="qty-controls"><button data-qty="-1" data-id="${i.id}" data-color="${escapeHTML(i.color)}" data-opts="${escapeHTML(i.opts||"")}" aria-label="Remove one ${escapeHTML(i.title)}">−</button><span>${i.qty}</span><button data-qty="1" data-id="${i.id}" data-color="${escapeHTML(i.color)}" data-opts="${escapeHTML(i.opts||"")}" aria-label="Add one ${escapeHTML(i.title)}">+</button></div></div>`).join(""):'<p class="cart-empty">Your cart is empty.<br>Pick a print to get started.</p>';
   }
   function showStatus(title,message){ $("status-title").textContent=title; $("status-message").textContent=message; $("status-modal").classList.remove("hidden"); $("close-status").focus(); }
   function closeStatus(){ $("status-modal").classList.add("hidden"); }
@@ -146,7 +152,7 @@
   }
   function unlockAdmin(){
     adminUnlocked=true; $("admin-login").classList.add("hidden"); $("admin-dashboard").classList.remove("hidden");
-    $("colors-input").value=colors; renderAdminSlots(); renderHomeEditor(); setupPreview();
+    $("colors-input").value=colors; renderOptionSets(); renderAdminSlots(); renderHomeEditor(); setupPreview();
   }
   function lockAdmin(){ adminUnlocked=false; $("admin-login").classList.remove("hidden"); $("admin-dashboard").classList.add("hidden"); $("admin-password").value=""; }
   function renderAdminSlots(){
@@ -156,10 +162,32 @@
       <div class="admin-slot-head"><strong>Slot #${i+1}</strong><span class="slot-actions"><label class="check-label"><input type="checkbox" data-field="featured" data-index="${i}" ${p.featured?"checked":""}> Featured</label><label class="check-label"><input type="checkbox" data-field="isNew" data-index="${i}" ${p.isNew?"checked":""}> New arrival</label><button type="button" class="button button-outline slot-remove" data-remove-slot="${i}">Remove slot</button></span></div>
       <div class="form-row"><label>Title<input data-field="title" data-index="${i}" value="${escapeHTML(p.title)}"></label><label>Price<input data-field="price" data-index="${i}" value="${escapeHTML(p.price)}"></label></div>
       <label>Description<textarea rows="2" data-field="desc" data-index="${i}">${escapeHTML(p.desc)}</textarea></label>
+      <fieldset class="slot-opts"><legend>Choices customers pick on this print</legend><label class="check-label"><input type="checkbox" data-opt-toggle="color" data-index="${i}" ${p.hideColor?"":"checked"}> Material / color</label>${optionSets.map(s=>`<label class="check-label"><input type="checkbox" data-opt-toggle="${s.id}" data-index="${i}" ${(p.opts||[]).includes(s.id)?"checked":""}> ${escapeHTML(s.name||"Untitled option")}</label>`).join("")||'<span class="muted">No extra options yet. Create some in “Print options” above.</span>'}</fieldset>
       <div class="photo-upload"><img class="photo-thumb" src="${escapeHTML(imageFor(p))}" alt=""><div class="photo-upload-controls"><label>Upload photo from your computer<input type="file" accept="image/*" data-upload="${i}"></label><button type="button" class="button button-outline" data-clear-photo="${i}">Remove photo</button></div></div>
       <label>Or photo URL / repository path<input data-field="image" data-index="${i}" value="${escapeHTML(String(p.image||"").startsWith("data:")?"":p.image)}" placeholder="${String(p.image||"").startsWith("data:")?"Uploaded photo in use":"assets/your-photo.jpg"}"></label>
     </article>`).join("");
   }
+  function renderOptionSets(){
+    const box=$("option-sets"); if(!box) return;
+    box.innerHTML=optionSets.length?optionSets.map(s=>`<div class="opt-set" data-opt-set="${s.id}"><label>Option name<input type="text" data-oset="name" data-id="${s.id}" value="${escapeHTML(s.name)}" placeholder="for example: Shape"></label><label>Choices <span class="label-help">separate with commas</span><input type="text" data-oset="choices" data-id="${s.id}" value="${escapeHTML(s.choices)}" placeholder="Round, Square, Heart"></label><button type="button" class="button button-outline" data-oset-remove="${s.id}">Remove option</button></div>`).join(""):'<p class="muted">No options yet. Click “+ Add option”, for example Shape or Clicker kind.</p>';
+  }
+  function saveOptions(){ writeStorage(STORAGE.options,optionSets); renderCatalog(); renderAdminSlots(); }
+  $("option-sets").addEventListener("input",e=>{ const t=e.target.closest("[data-oset]"); if(!t) return; const s=optionSets.find(x=>x.id===Number(t.dataset.id)); if(!s) return; s[t.dataset.oset]=t.value; saveOptions(); });
+  $("option-sets").addEventListener("click",e=>{
+    const b=e.target.closest("[data-oset-remove]"); if(!b) return; const id=Number(b.dataset.osetRemove), s=optionSets.find(x=>x.id===id); if(!s) return;
+    if(!confirm(`Remove the option "${s.name||"Untitled"}"? It will disappear from every print that uses it.`)) return;
+    optionSets=optionSets.filter(x=>x.id!==id); prints.forEach(p=>{ if(p.opts) p.opts=p.opts.filter(x=>x!==id); }); writeStorage(STORAGE.prints,prints); renderOptionSets(); saveOptions();
+  });
+  $("add-option").addEventListener("click",()=>{
+    const id=optionSets.reduce((m,s)=>Math.max(m,Number(s.id)||0),0)+1; optionSets.push({id,name:"New option",choices:"Choice 1, Choice 2"}); renderOptionSets(); saveOptions();
+    const inp=$("option-sets").querySelector(`[data-oset="name"][data-id="${id}"]`); if(inp){ inp.focus(); inp.select(); }
+  });
+  $("admin-slots").addEventListener("change",e=>{
+    const t=e.target.closest("[data-opt-toggle]"); if(!t) return; const p=prints[Number(t.dataset.index)]; if(!p) return;
+    if(t.dataset.optToggle==="color") p.hideColor=!t.checked;
+    else{ const id=Number(t.dataset.optToggle); p.opts=(p.opts||[]).filter(x=>x!==id); if(t.checked) p.opts.push(id); }
+    writeStorage(STORAGE.prints,prints); renderCatalog();
+  });
   function saveColors(){ colors=$("colors-input").value.split(",").map(c=>c.trim()).filter(Boolean).join(", "); try{localStorage.setItem(STORAGE.colors,colors);}catch{} renderColors(); renderCatalog(); showStatus("Materials saved","Available material and color options were updated in this browser."); }
 
   document.addEventListener("click",routeClick);
@@ -173,7 +201,7 @@
   document.addEventListener("click",e=>{
     const buy=e.target.closest("[data-buy]"); if(buy){const p=prints.find(x=>x.id===Number(buy.dataset.buy));if(p){addToCart(p.id,buy.closest(".product-card"));$("cart-name").focus();}return;}
     const add=e.target.closest("[data-add]");if(add){addToCart(Number(add.dataset.add),add.closest(".product-card"));return;}
-    const qty=e.target.closest("[data-qty]");if(qty){changeQty(Number(qty.dataset.id),qty.dataset.color,Number(qty.dataset.qty));}
+    const qty=e.target.closest("[data-qty]");if(qty){changeQty(Number(qty.dataset.id),qty.dataset.color,qty.dataset.opts||"",Number(qty.dataset.qty));}
   });
   $("custom-order-form").addEventListener("submit",async e=>{
     e.preventDefault();const form=e.currentTarget;const data=new FormData(form);if(!data.get("Customer_Email"))data.set("Customer_Email","Not provided");
@@ -182,7 +210,7 @@
   $("checkout-form").addEventListener("submit",async e=>{
     e.preventDefault();if(!cart.length){showStatus("Your cart is empty","Add at least one print before submitting an order request.");return;}
     const data=new FormData();data.append("Order_Type","Shopping Cart Order Request");data.append("Customer_Name",$("cart-name").value);data.append("Customer_Email",$("cart-email").value||"Not provided");
-    data.append("Cart_Total",$("cart-total").textContent);data.append("Cart_Items_Breakdown",cart.map((i,n)=>`${n+1}. ${i.title} (${i.color}) — Qty ${i.qty} @ ${i.price}`).join("\n"));
+    data.append("Cart_Total",$("cart-total").textContent);data.append("Cart_Items_Breakdown",cart.map((i,n)=>`${n+1}. ${i.title} (${[i.color,i.opts].filter(Boolean).join("; ")||"standard"}) — Qty ${i.qty} @ ${i.price}`).join("\n"));
     if(await sendForm(data,$("checkout-button"),"Submit order request ↗")){cart=[];writeStorage(STORAGE.cart,cart);renderCart();closeCart();$("checkout-form").reset();showStatus("Order request sent","Thanks! Your order request was submitted. No payment was taken; the site owner will confirm the details.");}
   });
   $("login-form").addEventListener("submit",e=>{e.preventDefault();if($("admin-password").value===ADMIN_PASSWORD){$("login-error").classList.add("hidden");unlockAdmin();}else $("login-error").classList.remove("hidden");});
@@ -649,7 +677,7 @@
   function buildConfig(){
     pruneHome();
     let skipped=0; const clean=v=>{ if(String(v||"").startsWith("data:")){ skipped++; return ""; } return v||""; };
-    const cfg={home,site:{hero:clean(site.hero),logo:clean(site.logo)},colors,prints:prints.map(p=>({...p,image:clean(p.image)}))};
+    const cfg={home,site:{hero:clean(site.hero),logo:clean(site.logo)},colors,options:optionSets,prints:prints.map(p=>({...p,image:clean(p.image)}))};
     const text='// RCSprints published settings.\n// To update: in Admin click "Copy settings for GitHub", open this file on GitHub,\n// select everything, paste over it, and commit.\nwindow.RCS_CONFIG = '+JSON.stringify(cfg,null,2)+';\n';
     return {cfg,text,skipped};
   }
@@ -685,7 +713,7 @@
     }catch{ bad("Could not check the site file versions."); }
     if(live){
       const {cfg,skipped}=buildConfig();
-      [["home","Home page design (colors, fonts, text, layout)"],["site","Home photo and logo"],["colors","Materials and colors list"],["prints","Prints, prices and photos"]].forEach(([k,l])=>{ canon(live[k])===canon(cfg[k])?ok(l+" match what you see in Admin."):bad(l+" on GitHub are different from what you see in Admin. Copy settings again and paste into config.js."); });
+      [["home","Home page design (colors, fonts, text, layout)"],["site","Home photo and logo"],["colors","Materials and colors list"],["options","Print options (shape, clicker kind…)"],["prints","Prints, prices and photos"]].forEach(([k,l])=>{ canon(live[k])===canon(cfg[k])?ok(l+" match what you see in Admin."):bad(l+" on GitHub are different from what you see in Admin. Copy settings again and paste into config.js."); });
       if(skipped) bad(skipped+" photo(s) exist only in this browser and cannot be published. Re-upload them (the upload must succeed so they get a Cloudinary link).");
       if(lines.every(l=>l.includes('class="ok"'))) lines.push("Everything published matches. If a visitor still sees the old site, GitHub Pages can take a few minutes to update. Try a private window or hold Ctrl+Shift+R.");
     }
