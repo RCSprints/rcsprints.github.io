@@ -86,7 +86,9 @@ window.RCS_CONFIG = {
       "price": "$3.00",
       "image": "https://res.cloudinary.com/dzp0rzb7/image/upload/f_auto,q_auto,w_900/v1794514862/nywqypd8goduonx3iiew.jpg",
       "desc": "This cute knitted elephant looks like something your grandma would knit you as a child.",
-      "featured": false
+      "featured": false,
+      "isNew": true,
+      "added": "2026-11-19"
     },
     {
       "id": 7,
