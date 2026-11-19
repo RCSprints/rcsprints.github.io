@@ -69,14 +69,19 @@
     const select=$("custom-color");
     if(select) select.innerHTML = colorList().map(c=>`<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("") || '<option value="Not specified">Not specified</option>';
   }
-  function productCard(p, index, featured=false){
+  function productCard(p, index, mode=""){
     const colorOptions=colorList().map(c=>`<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("");
     return `<article class="product-card">
-      <div class="product-image"><img loading="lazy" src="${escapeHTML(imageFor(p))}" alt="${escapeHTML(p.title)}"><span class="product-tag">${featured?"Featured":"Print slot "+(index+1)}</span></div>
+      <div class="product-image"><img loading="lazy" src="${escapeHTML(imageFor(p))}" alt="${escapeHTML(p.title)}"><span class="product-tag">${mode==="featured"?"Featured":(mode==="new"||isFresh(p))?"New":"Print slot "+(index+1)}</span></div>
       <div class="product-body"><div class="product-title-row"><h3>${escapeHTML(p.title)}</h3><span class="product-price">${escapeHTML(p.price)}</span></div>
       <p class="product-desc">${escapeHTML(p.desc)}</p>
       <div class="product-controls"><label class="field-label">Material / color<select data-color-for="${p.id}">${colorOptions || '<option>Standard</option>'}</select></label>
       <div class="product-actions"><button class="button button-primary" data-buy="${p.id}">Order print ↗</button><button class="button button-outline" data-add="${p.id}">+ Add to cart</button></div></div></div></article>`;
+  }
+  function isFresh(p){
+    if(!p||!p.isNew) return false; const days=Number(home.newDays)||0;
+    if(!days||!p.added) return true;
+    const t=Date.parse(p.added); return isNaN(t)||(Date.now()-t)/86400000<=days;
   }
   function renderCatalog(){
     const search=($("product-search")?.value || "").trim().toLowerCase();
@@ -84,7 +89,10 @@
     $("store-grid").innerHTML=filtered.map(p=>productCard(p,prints.indexOf(p))).join("");
     $("product-count").textContent=`${filtered.length} print${filtered.length===1?"":"s"}`;
     $("no-results").classList.toggle("hidden",filtered.length!==0);
-    $("featured-grid").innerHTML=prints.filter(p=>p.featured).slice(0,Math.min(6,Math.max(1,Number(home.featuredCount)||3))).map(p=>productCard(p,prints.indexOf(p),true)).join("");
+    $("featured-grid").innerHTML=prints.filter(p=>p.featured).slice(0,Math.min(6,Math.max(1,Number(home.featuredCount)||3))).map(p=>productCard(p,prints.indexOf(p),"featured")).join("");
+    const fresh=prints.filter(isFresh).sort((a,b)=>(Number(b.id)||0)-(Number(a.id)||0)).slice(0,Math.min(6,Math.max(1,Number(home.arrivalsCount)||3)));
+    $("arrivals-grid").innerHTML=fresh.map(p=>productCard(p,prints.indexOf(p),"new")).join("");
+    const arr=document.querySelector('[data-section-key="arrivals"]'); if(arr) arr.classList.toggle("is-empty",!fresh.length);
     renderColors(); renderCart();
   }
   function persistPrints(){ writeStorage(STORAGE.prints,prints); renderCatalog(); if(adminUnlocked) renderAdminSlots(); }
@@ -143,7 +151,7 @@
     if(!adminUnlocked) return;
     if(!prints.length){ $("admin-slots").innerHTML='<p class="muted">No print slots yet. Click “+ Add print slot” to create one.</p>'; return; }
     $("admin-slots").innerHTML=prints.map((p,i)=>`<article class="admin-slot" data-slot="${p.id}">
-      <div class="admin-slot-head"><strong>Slot #${i+1}</strong><span class="slot-actions"><label class="check-label"><input type="checkbox" data-field="featured" data-index="${i}" ${p.featured?"checked":""}> Featured</label><button type="button" class="button button-outline slot-remove" data-remove-slot="${i}">Remove slot</button></span></div>
+      <div class="admin-slot-head"><strong>Slot #${i+1}</strong><span class="slot-actions"><label class="check-label"><input type="checkbox" data-field="featured" data-index="${i}" ${p.featured?"checked":""}> Featured</label><label class="check-label"><input type="checkbox" data-field="isNew" data-index="${i}" ${p.isNew?"checked":""}> New arrival</label><button type="button" class="button button-outline slot-remove" data-remove-slot="${i}">Remove slot</button></span></div>
       <div class="form-row"><label>Title<input data-field="title" data-index="${i}" value="${escapeHTML(p.title)}"></label><label>Price<input data-field="price" data-index="${i}" value="${escapeHTML(p.price)}"></label></div>
       <label>Description<textarea rows="2" data-field="desc" data-index="${i}">${escapeHTML(p.desc)}</textarea></label>
       <div class="photo-upload"><img class="photo-thumb" src="${escapeHTML(imageFor(p))}" alt=""><div class="photo-upload-controls"><label>Upload photo from your computer<input type="file" accept="image/*" data-upload="${i}"></label><button type="button" class="button button-outline" data-clear-photo="${i}">Remove photo</button></div></div>
@@ -178,7 +186,7 @@
   $("login-form").addEventListener("submit",e=>{e.preventDefault();if($("admin-password").value===ADMIN_PASSWORD){$("login-error").classList.add("hidden");unlockAdmin();}else $("login-error").classList.remove("hidden");});
   $("admin-logout").addEventListener("click",lockAdmin); $("save-colors").addEventListener("click",saveColors);
   $("reset-catalog").addEventListener("click",()=>{if(confirm("Reset all print slots and photos to the starter catalog in this browser?")){prints=defaultPrints.map(p=>({...p}));persistPrints();showStatus("Catalog reset","The starter catalog has been restored in this browser.");}});
-  $("admin-slots").addEventListener("change",e=>{const el=e.target.closest("[data-field]");if(!el)return;const p=prints[Number(el.dataset.index)];if(!p)return;p[el.dataset.field]=el.type==="checkbox"?el.checked:el.value;if(el.dataset.field==="image"){persistPrints();}else{writeStorage(STORAGE.prints,prints);renderCatalog();}});
+  $("admin-slots").addEventListener("change",e=>{const el=e.target.closest("[data-field]");if(!el)return;const p=prints[Number(el.dataset.index)];if(!p)return;p[el.dataset.field]=el.type==="checkbox"?el.checked:el.value; if(el.dataset.field==="isNew"&&el.checked) p.added=new Date().toISOString().slice(0,10);if(el.dataset.field==="image"){persistPrints();}else{writeStorage(STORAGE.prints,prints);renderCatalog();}});
   $("admin-slots").addEventListener("input",e=>{const el=e.target.closest("input[data-field],textarea[data-field]");if(!el||el.type==="checkbox")return;const p=prints[Number(el.dataset.index)];if(!p)return;p[el.dataset.field]=el.value;writeStorage(STORAGE.prints,prints);renderCatalog();});
   function resizeImage(file,max=900){
     return new Promise((resolve,reject)=>{
@@ -262,7 +270,7 @@
   applySite();
   $("add-slot").addEventListener("click",()=>{
     const id=prints.reduce((m,p)=>Math.max(m,Number(p.id)||0),0)+1;
-    prints.push({id,title:"New print",price:"$0.00",image:"",desc:"Describe this print.",featured:false});
+    prints.push({id,title:"New print",price:"$0.00",image:"",desc:"Describe this print.",featured:false,isNew:true,added:new Date().toISOString().slice(0,10)});
     persistPrints();
     const last=$("admin-slots").lastElementChild;
     if(last){ last.scrollIntoView({behavior:"smooth",block:"center"}); const t=last.querySelector('[data-field="title"]'); if(t){t.focus();t.select();} }
@@ -300,7 +308,12 @@
     "Charcoal & red":P(["#121212","#1b1b1b","#242424","#333333","#c92a2a","#ff6b6b","#ffa8a8","#f5f5f5","#c4c4c4","#a0a0a0","#7d7d7d","#2f2f2f","#4d4d4d","#eeeeee"]),
     "Light":P(["#f4f7f4","#ffffff","#e9f0ea","#dbe8de","#1f7048","#17703f","#1f7048","#10211a","#2c3f35","#4d6055","#66786d","#cddad0","#aebfb3","#10211a"])
   };
-  const SECTIONS=[["hero","Hero (top of page)"],["strip","Process strip"],["featured","Featured prints"],["cta","Call-to-action band"]];
+  const SECTIONS=[["hero","Hero (top of page)"],["strip","Process strip"],["featured","Featured prints"],["arrivals","New arrivals"],["cta","Call-to-action band"]];
+  function completeOrder(stored){
+    const order=(stored||[]).filter(k=>secEls[k]);
+    SECTIONS.forEach(([k],i)=>{ if(!order.includes(k)){ const prev=i?SECTIONS[i-1][0]:null, at=prev?order.indexOf(prev):-1; order.splice(at+1,0,k); } });
+    return order;
+  }
   const pageHomeEl=$("page-home");
   const secEls=Object.fromEntries(SECTIONS.map(([k])=>[k,pageHomeEl.querySelector(`[data-section-key="${k}"]`)]));
   const THEME_DEFAULT=Object.fromEntries(THEME_VARS.map(([v])=>[v,getComputedStyle(ROOT).getPropertyValue(v).trim()]));
@@ -473,7 +486,7 @@
     if(home.layout&&home.layout!=="right") hero.classList.add("layout-"+home.layout);
     const hi=hero.querySelector(".hero-image"); hi.style.height=home.heroHeight?home.heroHeight+"px":""; hi.style.maxHeight=home.heroHeight?"110vw":"";
     heroImgEl.alt=home.heroAlt||ORIG_ALT;
-    const sec=home.sections||{}, order=(sec.order||[]).filter(k=>secEls[k]); SECTIONS.forEach(([k])=>{ if(!order.includes(k)) order.push(k); });
+    const sec=home.sections||{}, order=completeOrder(sec.order);
     order.forEach(k=>pageHomeEl.appendChild(secEls[k]));
     SECTIONS.forEach(([k])=>{ secEls[k].style.display=(sec.hidden&&sec.hidden[k])?"none":""; });
     editEls.forEach(el=>{
@@ -541,7 +554,7 @@
     const box=$("home-editor"); if(!box) return;
     const open=new Set([...box.querySelectorAll("details[open]")].map(d=>d.dataset.id)), e=escapeHTML;
     const T=v=>(home.theme&&home.theme[v])||THEME_DEFAULT[v], th=home.theme||{}, fo=home.fonts||{}, sec=home.sections||{};
-    const order=(sec.order||[]).filter(k=>secEls[k]); SECTIONS.forEach(([k])=>{ if(!order.includes(k)) order.push(k); });
+    const order=completeOrder(sec.order);
     let h=`<details data-id="colors"><summary>🎨 Colors</summary><div class="he-body"><div class="he-presets">${Object.keys(PRESETS).map(n=>`<button type="button" class="button button-outline" data-h="preset" data-v="${e(n)}">${e(n)}</button>`).join("")}</div>`+
       THEME_VARS.map(([v,l])=>`<div class="he-row"><label>${l}<input type="color" data-h="theme" data-v="${v}" value="${T(v)}"></label><input type="text" class="hex" data-h="theme-hex" data-v="${v}" value="${T(v)}" maxlength="7" spellcheck="false" aria-label="${l} color code"><button type="button" class="he-mini" data-h="theme-reset" data-v="${v}"${th[v]?"":" disabled"}>Reset</button></div>`).join("")+`<div class="he-note" id="he-contrast"></div></div></details>`;
     h+=`<details data-id="fonts"><summary>🔤 Fonts & shape</summary><div class="he-body">${fontPicker("font-heading",fo.heading,"Original (Space Grotesk)","Headings font")}${fontPicker("font-body",fo.body,"Original (DM Sans)","Body font")}`+
@@ -550,6 +563,8 @@
     h+=`<details data-id="layout"><summary>📐 Layout & sections</summary><div class="he-body"><label>Hero photo position<select data-h="layout">${[["right","Photo on the right (original)"],["left","Photo on the left"],["stack","Photo below the text"],["none","No photo"]].map(([v,l])=>`<option value="${v}"${(home.layout||"right")===v?" selected":""}>${l}</option>`).join("")}</select></label>`+
       `<label>Hero photo height: <output>${home.heroHeight?home.heroHeight+"px":"Automatic"}</output><input type="range" min="200" max="700" step="10" value="${home.heroHeight||430}" data-h="heroHeight"></label><button type="button" class="he-mini" data-h="heroHeight-reset">Automatic height</button>`+
       `<label>Photo description (for screen readers)<input type="text" data-h="heroAlt" value="${e(home.heroAlt||ORIG_ALT)}"></label>`+
+      `<label>New arrivals shown<select data-h="arrivalsCount">${[1,2,3,4,5,6].map(n=>`<option${(home.arrivalsCount||3)===n?" selected":""}>${n}</option>`).join("")}</select></label>`+
+      `<label>Keep a print in New Arrivals for<select data-h="newDays">${[["","As long as “New arrival” is ticked"],["14","2 weeks"],["30","30 days"],["60","60 days"],["90","90 days"]].map(([v,l])=>`<option value="${v}"${String(home.newDays||"")===v?" selected":""}>${l}</option>`).join("")}</select></label>`+
       `<label>Featured prints shown<select data-h="featuredCount">${[1,2,3,4,5,6].map(n=>`<option${(home.featuredCount||3)===n?" selected":""}>${n}</option>`).join("")}</select></label>`+
       `<div class="he-note">Sections on the home page, top to bottom:</div>`+order.map((k,i)=>`<div class="he-sec"><span>${e(SECTIONS.find(s=>s[0]===k)[1])}</span><button type="button" class="he-mini" data-h="sec-up" data-k="${k}"${i===0?" disabled":""} aria-label="Move up">↑</button><button type="button" class="he-mini" data-h="sec-down" data-k="${k}"${i===order.length-1?" disabled":""} aria-label="Move down">↓</button><label class="check-label"><input type="checkbox" data-h="sec-show" data-k="${k}"${sec.hidden&&sec.hidden[k]?"":" checked"}> Show</label></div>`).join("")+`</div></details>`;
     h+=fallEditor();
@@ -589,6 +604,8 @@
       else if(a==="layout") home.layout=t.value==="right"?"":t.value;
       else if(a==="heroHeight"){ home.heroHeight=Number(t.value); t.previousElementSibling.textContent=t.value+"px"; }
       else if(a==="heroAlt") home.heroAlt=t.value===ORIG_ALT?"":t.value;
+      else if(a==="arrivalsCount") home.arrivalsCount=Number(t.value)===3?"":Number(t.value);
+      else if(a==="newDays") home.newDays=t.value?Number(t.value):"";
       else if(a==="featuredCount") home.featuredCount=Number(t.value)===3?"":Number(t.value);
       else if(a==="sec-show"){ home.sections=home.sections||{}; home.sections.hidden=home.sections.hidden||{}; home.sections.hidden[k]=!t.checked; }
       else return;
@@ -606,7 +623,7 @@
       else if(a==="el-reset"){ if(home.el) delete home.el[k]; }
       else if(a==="heroHeight-reset"){ home.heroHeight=""; }
       else if(a==="sec-up"||a==="sec-down"){
-        const sec=(home.sections=home.sections||{}); const order=(sec.order||[]).filter(x=>secEls[x]); SECTIONS.forEach(([x])=>{ if(!order.includes(x)) order.push(x); });
+        const sec=(home.sections=home.sections||{}); const order=completeOrder(sec.order);
         const i=order.indexOf(k), j=a==="sec-up"?i-1:i+1; if(j<0||j>=order.length) return; [order[i],order[j]]=[order[j],order[i]]; sec.order=order;
       }
       else if(a==="reset-all"){ if(!confirm("Reset the whole home page design (colors, fonts, text, layout) to the original in this browser?")) return; home={}; }
