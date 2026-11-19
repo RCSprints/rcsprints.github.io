@@ -31,6 +31,7 @@
   let cart = readStorage(STORAGE.cart, []);
   let adminUnlocked = false;
   // ----- Homepage design state (see "Homepage editor" below) -----
+  const BUILD="2026-11-19c";
   const HOME_KEY="rcsprints_home_v1";
   const HOME_DEFAULTS = CFG.home || {};
   function deepMerge(a,b){ const o=JSON.parse(JSON.stringify(a||{})); (function m(t,s){ for(const k in s){ if(s[k]&&typeof s[k]==="object"&&!Array.isArray(s[k])){ t[k]=(t[k]&&typeof t[k]==="object")?t[k]:{}; m(t[k],s[k]); } else t[k]=s[k]; } })(o,b||{}); return o; }
@@ -90,7 +91,8 @@
     $("product-count").textContent=`${filtered.length} print${filtered.length===1?"":"s"}`;
     $("no-results").classList.toggle("hidden",filtered.length!==0);
     $("featured-grid").innerHTML=prints.filter(p=>p.featured).slice(0,Math.min(6,Math.max(1,Number(home.featuredCount)||3))).map(p=>productCard(p,prints.indexOf(p),"featured")).join("");
-    const fresh=prints.filter(isFresh).sort((a,b)=>(Number(b.id)||0)-(Number(a.id)||0)).slice(0,Math.min(6,Math.max(1,Number(home.arrivalsCount)||3)));
+    const nNew=Math.min(6,Math.max(1,Number(home.arrivalsCount)||3)), byNewest=(a,b)=>(Number(b.id)||0)-(Number(a.id)||0);
+    const fresh=prints.some(p=>p.isNew)?prints.filter(isFresh).sort(byNewest).slice(0,nNew):prints.slice().sort(byNewest).slice(0,nNew);
     $("arrivals-grid").innerHTML=fresh.map(p=>productCard(p,prints.indexOf(p),"new")).join("");
     const arr=document.querySelector('[data-section-key="arrivals"]'); if(arr) arr.classList.toggle("is-empty",!fresh.length);
     renderColors(); renderCart();
@@ -563,6 +565,7 @@
     h+=`<details data-id="layout"><summary>📐 Layout & sections</summary><div class="he-body"><label>Hero photo position<select data-h="layout">${[["right","Photo on the right (original)"],["left","Photo on the left"],["stack","Photo below the text"],["none","No photo"]].map(([v,l])=>`<option value="${v}"${(home.layout||"right")===v?" selected":""}>${l}</option>`).join("")}</select></label>`+
       `<label>Hero photo height: <output>${home.heroHeight?home.heroHeight+"px":"Automatic"}</output><input type="range" min="200" max="700" step="10" value="${home.heroHeight||430}" data-h="heroHeight"></label><button type="button" class="he-mini" data-h="heroHeight-reset">Automatic height</button>`+
       `<label>Photo description (for screen readers)<input type="text" data-h="heroAlt" value="${e(home.heroAlt||ORIG_ALT)}"></label>`+
+      `<div class="he-note">${prints.some(p=>p.isNew)?"New Arrivals shows the prints you ticked “New arrival” on.":"No prints are ticked “New arrival” yet, so the newest prints are shown automatically. Tick “New arrival” on specific prints (in Print slots below) to choose them yourself."}</div>`+
       `<label>New arrivals shown<select data-h="arrivalsCount">${[1,2,3,4,5,6].map(n=>`<option${(home.arrivalsCount||3)===n?" selected":""}>${n}</option>`).join("")}</select></label>`+
       `<label>Keep a print in New Arrivals for<select data-h="newDays">${[["","As long as “New arrival” is ticked"],["14","2 weeks"],["30","30 days"],["60","60 days"],["90","90 days"]].map(([v,l])=>`<option value="${v}"${String(home.newDays||"")===v?" selected":""}>${l}</option>`).join("")}</select></label>`+
       `<label>Featured prints shown<select data-h="featuredCount">${[1,2,3,4,5,6].map(n=>`<option${(home.featuredCount||3)===n?" selected":""}>${n}</option>`).join("")}</select></label>`+
@@ -670,6 +673,16 @@
       if(!res.ok) bad("config.js was not found on your site (error "+res.status+"). It must be named exactly config.js and sit next to index.html.");
       else{ const m=(await res.text()).match(/window\.RCS_CONFIG\s*=\s*([\s\S]*?);\s*$/); try{ live=JSON.parse(m[1]); }catch{ bad("config.js on GitHub has a typo or was only partly pasted. Re-copy the settings and paste over everything in that file."); } }
     }catch(err){ bad("Could not reach "+e(url.href)+"."); }
+    try{
+      const base=location.href.split("#")[0].split("?")[0], nc={cache:"no-store"}, bust="?check="+Date.now();
+      const [sj,cs,ix]=await Promise.all([fetch(new URL("script.js",base).href+bust,nc).then(r=>r.ok?r.text():""),fetch(new URL("style.css",base).href+bust,nc).then(r=>r.ok?r.text():""),fetch(base+bust,nc).then(r=>r.ok?r.text():"")]);
+      const v={"script.js":(sj.match(/const BUILD="([^"]+)"/)||[])[1],"style.css":(cs.match(/\/\* build ([^ ]+) \*\//)||[])[1],"index.html":(ix.match(/name="rcs-build" content="([^"]+)"/)||[])[1]};
+      const vals=Object.values(v); const missing=Object.keys(v).filter(k=>!v[k]);
+      if(missing.length) bad("These files on your site are missing or are an old version: <strong>"+missing.join(", ")+"</strong>. Upload the newest copies from the latest zip (all of index.html, script.js, style.css and config.js together).");
+      else if(new Set(vals).size>1) bad("Your files are from different versions ("+Object.entries(v).map(([k,x])=>k+" "+x).join(", ")+"). Upload all of index.html, script.js, style.css and config.js from the same zip.");
+      else if(v["script.js"]!==BUILD) bad("Your browser is running an older saved copy of the site (version "+BUILD+") but the live site is version "+v["script.js"]+". Hold Ctrl+Shift+R to refresh.");
+      else ok("All site files are the same newest version ("+BUILD+").");
+    }catch{ bad("Could not check the site file versions."); }
     if(live){
       const {cfg,skipped}=buildConfig();
       [["home","Home page design (colors, fonts, text, layout)"],["site","Home photo and logo"],["colors","Materials and colors list"],["prints","Prints, prices and photos"]].forEach(([k,l])=>{ canon(live[k])===canon(cfg[k])?ok(l+" match what you see in Admin."):bad(l+" on GitHub are different from what you see in Admin. Copy settings again and paste into config.js."); });
